@@ -33,7 +33,7 @@ public class ThriftyEnocder {
         var encoderReadingRaw = m_enc.getAbsolutePosition();
         var retVal = new Rotation2d(encoderReadingRaw * Math.PI * 2);
 
-        SmartDashboard.putNumber(name + "_raw_voltage", 0);
+        SmartDashboard.putNumber(name + "_raw_voltage", m_input.getVoltage());
         SmartDashboard.putNumber(name + "_pos_deg", retVal.getDegrees());
 
         return retVal;

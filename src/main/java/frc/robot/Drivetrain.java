@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import com.kauailabs.navx.frc.AHRS;
+
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -12,7 +14,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.AnalogGyro;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Timer;
 
 /** Represents a swerve drive style drivetrain. */
@@ -25,12 +27,12 @@ public class Drivetrain {
   private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
   private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
 
-  private final SwerveModule m_frontLeft = new SwerveModule("FL_", 1, 2, 0, 1, 0);
-  private final SwerveModule m_frontRight = new SwerveModule("FR_",3, 4, 4, 5, 1);
-  private final SwerveModule m_backLeft = new SwerveModule("BL_",5, 6, 8, 9, 2);
-  private final SwerveModule m_backRight = new SwerveModule("BR_",7, 8, 12, 13, 3);
+  private final SwerveModule m_frontLeft = new SwerveModule("FL", 1, 2, 0, 1, 0);
+  private final SwerveModule m_frontRight = new SwerveModule("FR",3, 4, 4, 5, 1);
+  private final SwerveModule m_backLeft = new SwerveModule("BL",5, 6, 8, 9, 2);
+  private final SwerveModule m_backRight = new SwerveModule("BR",7, 8, 12, 13, 3);
 
-  private final AnalogGyro m_gyro = new AnalogGyro(0);
+  private final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
 
   private final SwerveDriveKinematics m_kinematics =
       new SwerveDriveKinematics(

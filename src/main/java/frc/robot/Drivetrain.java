@@ -9,13 +9,14 @@ import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.Timer;
+import frc.robot.camera.PhotonCamWrapper;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
@@ -31,8 +32,8 @@ public class Drivetrain {
   //Physical dimensions of the drivetrain. What's important here is the 
   // width and length between the contact patches of the wheels touching the ground
   // (which likely isn't the same as your frame perimiter)
-  public final double trackWidth_m = Units.inchesToMeters(27);
-  public final double trackLength_m = Units.inchesToMeters(27);
+  private final double trackWidth_m = Units.inchesToMeters(27);
+  private final double trackLength_m = Units.inchesToMeters(27);
 
   // Mechanical mounting offsets of the encoder & magnet within the shaft
   // Must be updated whenever the module is reassembled
@@ -43,20 +44,26 @@ public class Drivetrain {
   // 3 - Using a square, twist the modules by hand until they are aligned with the robot's chassis
   // 4 - Read out the encoder readings for each module, put them here
   // 5 - Redeploy code, verify that hte encoder readings are correct as each module is manually rotated
-  static public final double FL_ENCODER_MOUNT_OFFSET_RAD = -2.157;
-  static public final double FR_ENCODER_MOUNT_OFFSET_RAD = -1.575;
-  static public final double BL_ENCODER_MOUNT_OFFSET_RAD = -2.180;
-  static public final double BR_ENCODER_MOUNT_OFFSET_RAD = -0.803;
+  private final double FL_ENCODER_MOUNT_OFFSET_RAD = -2.157;
+  private final double FR_ENCODER_MOUNT_OFFSET_RAD = -1.575;
+  private final double BL_ENCODER_MOUNT_OFFSET_RAD = -2.180;
+  private final double BR_ENCODER_MOUNT_OFFSET_RAD = -0.803;
+
+  //Match this with your UI configuration for your camera used
+  // for apriltag detection
+  private final String photonCamName = "PhotonVision";
+
+  //Configure the location and rotation of the camera mounting, relative to your 
+  // robot's origin.
+  private final Transform3d photonCamMountLocation = new Transform3d();
 
   // End you-update-em section
   ///////////////////////////////////////////////////////////////
-
   
-  
-  private final Translation2d m_frontLeftLocation  = new Translation2d(trackWidth_m/2.0, trackWidth_m/2.0);
-  private final Translation2d m_frontRightLocation = new Translation2d(trackWidth_m/2.0, -trackWidth_m/2.0);
-  private final Translation2d m_backLeftLocation   = new Translation2d(-trackWidth_m/2.0, trackWidth_m/2.0);
-  private final Translation2d m_backRightLocation  = new Translation2d(-trackWidth_m/2.0, -trackWidth_m/2.0);
+  private final Translation2d m_frontLeftLocation  = new Translation2d(trackWidth_m/2.0, trackLength_m/2.0);
+  private final Translation2d m_frontRightLocation = new Translation2d(trackWidth_m/2.0, -trackLength_m/2.0);
+  private final Translation2d m_backLeftLocation   = new Translation2d(-trackWidth_m/2.0, trackLength_m/2.0);
+  private final Translation2d m_backRightLocation  = new Translation2d(-trackWidth_m/2.0, -trackLength_m/2.0);
 
   private final SwerveModule m_frontLeft  = new SwerveModule("FL", 1, 2, 0, FL_ENCODER_MOUNT_OFFSET_RAD);
   private final SwerveModule m_frontRight = new SwerveModule("FR", 3, 4, 1, FR_ENCODER_MOUNT_OFFSET_RAD);
@@ -65,6 +72,7 @@ public class Drivetrain {
 
   private final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
 
+  private final PhotonCamWrapper m_cam = new PhotonCamWrapper(photonCamName, photonCamMountLocation);
 
   private final SwerveDriveKinematics m_kinematics =
       new SwerveDriveKinematics(
@@ -111,7 +119,7 @@ public class Drivetrain {
     m_backRight.setDesiredState(swerveModuleStates[3]);
   }
 
-  /** Updates the field relative position of the robot. */
+  // Updates the field relative position of the robot. 
   public void updateOdometry() {
     m_poseEstimator.update(
         m_gyro.getRotation2d(),
@@ -122,11 +130,9 @@ public class Drivetrain {
           m_backRight.getPosition()
         });
 
-    // Also apply vision measurements. We use 0.3 seconds in the past as an example -- on
-    // a real robot, this must be calculated based either on latency or timestamps.
-    m_poseEstimator.addVisionMeasurement(
-        ExampleGlobalMeasurementSensor.getEstimatedGlobalPose(
-            m_poseEstimator.getEstimatedPosition()),
-        Timer.getFPGATimestamp() - 0.3);
+    // Put all vision observations into the pose estimator
+    for(var obs : m_cam.getCurObservations()){
+      m_poseEstimator.addVisionMeasurement(obs.estFieldPose, obs.time);
+    }
   }
 }

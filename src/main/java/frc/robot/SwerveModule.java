@@ -83,7 +83,7 @@ public class SwerveModule {
 
     // Set up turning NEO and the absolute encoder.
     m_turningMotor = new SparkMaxWrapper(turningMotorChannel);
-    m_turningEncoder = new ThriftyEnocder(namePrefix + "_turning", turningEncoderAnalogChannel);
+    m_turningEncoder = new ThriftyEnocder(namePrefix + "_turning", turningEncoderAnalogChannel, turningEncoderOffset_rad);
 
     // Limit the turn PID Controller's input range between -pi and pi and set the input
     // to be continuous.

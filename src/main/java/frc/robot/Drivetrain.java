@@ -19,20 +19,52 @@ import edu.wpi.first.wpilibj.Timer;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
+
+  ///////////////////////////////////////////////////////////////
+  // Update all these for your drivetrain
+
+  // The maximum speed you _want_ the drivetrain to go. It should be at or below
+  // the theoretical maximum speeds of the drivetrain you actually built.
   public static final double kMaxSpeed = 3.0; // 3 meters per second
   public static final double kMaxAngularSpeed = Math.PI; // 1/2 rotation per second
 
-  private final Translation2d m_frontLeftLocation = new Translation2d(0.381, 0.381);
-  private final Translation2d m_frontRightLocation = new Translation2d(0.381, -0.381);
-  private final Translation2d m_backLeftLocation = new Translation2d(-0.381, 0.381);
-  private final Translation2d m_backRightLocation = new Translation2d(-0.381, -0.381);
+  //Physical dimensions of the drivetrain. What's important here is the 
+  // width and length between the contact patches of the wheels touching the ground
+  // (which likely isn't the same as your frame perimiter)
+  public final double trackWidth_m = Units.inchesToMeters(27);
+  public final double trackLength_m = Units.inchesToMeters(27);
 
-  private final SwerveModule m_frontLeft = new SwerveModule("FL", 1, 2, 0, 1, 0);
-  private final SwerveModule m_frontRight = new SwerveModule("FR",3, 4, 4, 5, 1);
-  private final SwerveModule m_backLeft = new SwerveModule("BL",5, 6, 8, 9, 2);
-  private final SwerveModule m_backRight = new SwerveModule("BR",7, 8, 12, 13, 3);
+  // Mechanical mounting offsets of the encoder & magnet within the shaft
+  // Must be updated whenever the module is reassembled
+  // Procedure: 
+  // 0 - Put the robot up on blocks.
+  // 1 - Reset all these values to 0, deploy code
+  // 2 - Pull up dashboard with encoder readings (in radians)
+  // 3 - Using a square, twist the modules by hand until they are aligned with the robot's chassis
+  // 4 - Read out the encoder readings for each module, put them here
+  // 5 - Redeploy code, verify that hte encoder readings are correct as each module is manually rotated
+  static public final double FL_ENCODER_MOUNT_OFFSET_RAD = -2.157;
+  static public final double FR_ENCODER_MOUNT_OFFSET_RAD = -1.575;
+  static public final double BL_ENCODER_MOUNT_OFFSET_RAD = -2.180;
+  static public final double BR_ENCODER_MOUNT_OFFSET_RAD = -0.803;
+
+  // End you-update-em section
+  ///////////////////////////////////////////////////////////////
+
+  
+  
+  private final Translation2d m_frontLeftLocation  = new Translation2d(trackWidth_m/2.0, trackWidth_m/2.0);
+  private final Translation2d m_frontRightLocation = new Translation2d(trackWidth_m/2.0, -trackWidth_m/2.0);
+  private final Translation2d m_backLeftLocation   = new Translation2d(-trackWidth_m/2.0, trackWidth_m/2.0);
+  private final Translation2d m_backRightLocation  = new Translation2d(-trackWidth_m/2.0, -trackWidth_m/2.0);
+
+  private final SwerveModule m_frontLeft  = new SwerveModule("FL", 1, 2, 0, FL_ENCODER_MOUNT_OFFSET_RAD);
+  private final SwerveModule m_frontRight = new SwerveModule("FR", 3, 4, 1, FR_ENCODER_MOUNT_OFFSET_RAD);
+  private final SwerveModule m_backLeft   = new SwerveModule("BL", 5, 6, 2, BL_ENCODER_MOUNT_OFFSET_RAD);
+  private final SwerveModule m_backRight  = new SwerveModule("BR", 7, 8, 3, BR_ENCODER_MOUNT_OFFSET_RAD);
 
   private final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
+
 
   private final SwerveDriveKinematics m_kinematics =
       new SwerveDriveKinematics(

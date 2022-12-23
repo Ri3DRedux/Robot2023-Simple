@@ -4,75 +4,88 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.motorcontrol.MotorController;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.math.util.Units;
+
 
 public class SwerveModule {
-  private static final double kWheelRadius = 0.0508;
-  private static final int kEncoderResolution = 4096;
 
-  private static final double kModuleMaxAngularVelocity = Drivetrain.kMaxAngularSpeed;
-  private static final double kModuleMaxAngularAcceleration =
-      2 * Math.PI; // radians per second squared
+  ///////////////////////////////////////////////////////////////
+  // Update all these for your drivetrain
+  
+  // SDS Mk4i Modules
+  private final double kWheelRadius_in = 3.0;
+  private final double kWheelGearRatio = 6.75; 
 
-  private final MotorController m_driveMotor;
-  private final MotorController m_turningMotor;
+  // The maximum speeds you _want_ your modules to spin. 
+  // This should be at or below the theoretical maximum of the moduels you actually built.
+  private final double kModuleMaxAngularVelocity = Drivetrain.kMaxAngularSpeed;
+  private final double kModuleMaxAngularAcceleration = 2 * Math.PI; // radians per second squared
 
-  private final Encoder m_driveEncoder;
+  // Feedback and Feedforward constants
+  private final double m_drive_kP = 0.0015; 
+  private final double m_drive_kI = 0.0;
+  private final double m_drive_kD = 0.0;
+  private final double m_drive_kV = 0.018;
+  private final double m_drive_kS = 0.172;
+
+  private final double m_turn_kP  = 0.008;
+  private final double m_turn_kI  = 0.0;
+  private final double m_turn_kD  = 0.00001;
+  private final double m_turn_kV  = 0.0; //TODO - we need to tune this
+  private final double m_turn_kS  = 0.0; //TODO - we need to tune this
+
+  // End you-update-em section
+  ///////////////////////////////////////////////////////////////
+
+
+  private final SparkMaxWrapper m_driveMotor;
+  private final SparkMaxWrapper m_turningMotor;
+
   private final ThriftyEnocder m_turningEncoder;
 
-  // Gains are for example purposes only - must be determined for your own robot!
-  private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController =
       new ProfiledPIDController(
-          1,
-          0,
-          0,
+          m_turn_kP,
+          m_turn_kI,
+          m_turn_kD,
           new TrapezoidProfile.Constraints(
               kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
-  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
+  private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(m_drive_kS, m_drive_kV);
+  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(m_turn_kS, m_turn_kV);
 
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
    *
    * @param namePrefix String to uniquely identify this module
-   * @param driveMotorChannel PWM output for the drive motor.
-   * @param turningMotorChannel PWM output for the turning motor.
-   * @param driveEncoderChannelA DIO input for the drive encoder channel A
-   * @param driveEncoderChannelB DIO input for the drive encoder channel B
+   * @param driveMotorChannel CAN ID for the drive motor.
+   * @param turningMotorChannel CAN ID for the turning motor.
    * @param turningEncoderAnalogChannel Analog Input for the Thriftybot Analog Encoder
    */
   public SwerveModule(
       String namePrefix,
       int driveMotorChannel,
       int turningMotorChannel,
-      int driveEncoderChannelA,
-      int driveEncoderChannelB,
-      int turningEncoderAnalogChannel) {
-    m_driveMotor = new PWMSparkMax(driveMotorChannel);
-    m_turningMotor = new PWMSparkMax(turningMotorChannel);
+      int turningEncoderAnalogChannel,
+      double turningEncoderOffset_rad) {
 
-    m_driveEncoder = new Encoder(driveEncoderChannelA, driveEncoderChannelB);
+    // Set up drive NEO
+    m_driveMotor = new SparkMaxWrapper(driveMotorChannel);
+    m_driveMotor.setClosedLoopGains(m_drive_kP, m_drive_kI, m_drive_kD);
+
+    // Set up turning NEO and the absolute encoder.
+    m_turningMotor = new SparkMaxWrapper(turningMotorChannel);
     m_turningEncoder = new ThriftyEnocder(namePrefix + "_turning", turningEncoderAnalogChannel);
 
-    // Set the distance per pulse for the drive encoder. We can simply use the
-    // distance traveled for one rotation of the wheel divided by the encoder
-    // resolution.
-    m_driveEncoder.setDistancePerPulse(2 * Math.PI * kWheelRadius / kEncoderResolution);
-
-    // Limit the PID Controller's input range between -pi and pi and set the input
+    // Limit the turn PID Controller's input range between -pi and pi and set the input
     // to be continuous.
     m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
   }
@@ -83,23 +96,19 @@ public class SwerveModule {
    * @return The current state of the module.
    */
   public SwerveModuleState getState() {
-    return new SwerveModuleState(
-        m_driveEncoder.getRate(), m_turningEncoder.getPosition());
+    var tmp = dtMotorRotToLinear_m(m_driveMotor.getVelocity_radpersec());
+    return new SwerveModuleState(tmp, m_turningEncoder.getPosition());
   }
 
   /**
-   * Returns the current position of the module.
-   *
    * @return The current position of the module.
    */
   public SwerveModulePosition getPosition() {
-    return new SwerveModulePosition(
-        m_driveEncoder.getDistance(), m_turningEncoder.getPosition());
+    var tmp = dtMotorRotToLinear_m(m_driveMotor.getPosition_rad());
+    return new SwerveModulePosition(tmp, m_turningEncoder.getPosition());
   }
 
   /**
-   * Sets the desired state for the module.
-   *
    * @param desiredState Desired state with speed and angle.
    */
   public void setDesiredState(SwerveModuleState desiredState) {
@@ -107,20 +116,29 @@ public class SwerveModule {
     SwerveModuleState state =
         SwerveModuleState.optimize(desiredState, m_turningEncoder.getPosition());
 
-    // Calculate the drive output from the drive PID controller.
-    final double driveOutput =
-        m_drivePIDController.calculate(m_driveEncoder.getRate(), state.speedMetersPerSecond);
-
+    // Calculate the drive output with our own arbitrary feed-forward, 
+    // but use the onboard PID control for the motor.
     final double driveFeedforward = m_driveFeedforward.calculate(state.speedMetersPerSecond);
+    var velCmd_radPerSec = dtLinearToMotorRot_rad(state.speedMetersPerSecond);
+    m_driveMotor.setClosedLoopCmd(velCmd_radPerSec, driveFeedforward);
 
     // Calculate the turning motor output from the turning PID controller.
+    // Do this all onboard and just send a voltage command to the motor.
     final double turnOutput =
         m_turningPIDController.calculate(m_turningEncoder.getPosition().getRadians(), state.angle.getRadians());
 
     final double turnFeedforward =
         m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
 
-    m_driveMotor.setVoltage(driveOutput + driveFeedforward);
-    m_turningMotor.setVoltage(turnOutput + turnFeedforward);
+    m_turningMotor.setVoltageCmd(turnOutput + turnFeedforward);
   }
+
+  private double dtLinearToMotorRot_rad(double linear_m_in){
+      return linear_m_in / (Units.inchesToMeters(kWheelRadius_in)) * kWheelGearRatio;
+  }
+
+  private double dtMotorRotToLinear_m(double motor_rad_in){
+      return motor_rad_in * (Units.inchesToMeters(kWheelRadius_in)) / kWheelGearRatio;
+  }
+
 }

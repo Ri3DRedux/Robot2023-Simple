@@ -5,7 +5,9 @@
 package frc.robot;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 
 public class Robot extends TimedRobot {
@@ -17,15 +19,40 @@ public class Robot extends TimedRobot {
   private final SlewRateLimiter m_yspeedLimiter = new SlewRateLimiter(3);
   private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
 
+  //Very simple autonomous - start at a known position, drive forward at speed for time.
+  private final Pose2d m_autoStartPose = new Pose2d();
+  private final double m_autoDriveTime_sec = 2.0;
+  private final double m_autoDriveSpeed_mps = 1.0;
+  private Timer m_autoDriveTimer = new Timer();
+
+
+  @Override
+  public void autonomousInit(){
+    m_swerve.setKnownPosition(m_autoStartPose);
+    m_autoDriveTimer.start();
+
+  }
+
   @Override
   public void autonomousPeriodic() {
-    driveWithJoystick(false);
-    m_swerve.updateOdometry();
+
+    if(!m_autoDriveTimer.hasElapsed(m_autoDriveTime_sec)){
+      // Timer not yet expired - drive forward at the right speed
+      m_swerve.drive(m_autoDriveSpeed_mps, 0, 0, false);
+    } else {
+      // Timer expired - stop
+      m_swerve.drive(0, 0, 0, false);
+    }
   }
 
   @Override
   public void teleopPeriodic() {
     driveWithJoystick(true);
+  }
+
+  @Override
+  public void robotPeriodic(){
+    m_swerve.updateOdometry();
   }
 
   private void driveWithJoystick(boolean fieldRelative) {

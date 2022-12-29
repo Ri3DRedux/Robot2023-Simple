@@ -15,9 +15,9 @@ import edu.wpi.first.math.util.Units;
  */
 public class SparkMaxWrapper {
     
-    private CANSparkMax m_motor;
-    private SparkMaxPIDController m_pidController;
-    private RelativeEncoder m_encoder;
+    CANSparkMax m_motor;
+    SparkMaxPIDController m_pidController;
+    RelativeEncoder m_encoder;
 
 
     public SparkMaxWrapper(int can_id){
@@ -51,14 +51,7 @@ public class SparkMaxWrapper {
         
     }
 
-    public void setInverted(boolean invert) {
-        m_motor.setInverted(invert);
-    }
-
     public void setClosedLoopGains(double p, double i, double d) {
-
-        // I don't know why we need to do this, but it makes sim line up with real life.
-        p /= 1000;
 
         //Convert to Rev units of RPM
         p = Units.radiansPerSecondToRotationsPerMinute(p);
@@ -84,19 +77,10 @@ public class SparkMaxWrapper {
         m_motor.setVoltage(cmd_v);
     }
 
-    public double getCurrent_A() {
-        return m_motor.getOutputCurrent();
-    }
-
-
     private double RPMtoDegPerSec(double rpmIn){ return rpmIn * 360 / 60.0; }
 
     public double getVelocity_radpersec() {
         return  Units.degreesToRadians(RPMtoDegPerSec(m_encoder.getVelocity()));
-    }
-
-    public void follow(SparkMaxWrapper leader) {
-        this.m_motor.follow(leader.m_motor);
     }
 
     public double getPosition_rad() {
@@ -107,7 +91,4 @@ public class SparkMaxWrapper {
         return m_motor.getAppliedOutput() * m_motor.getBusVoltage();
     }
 
-    public void resetDistance() {
-        m_encoder.setPosition(0.0);
-    }
 }

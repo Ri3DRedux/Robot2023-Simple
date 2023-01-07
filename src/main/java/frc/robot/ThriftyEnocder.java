@@ -34,7 +34,7 @@ public class ThriftyEnocder {
         // See
         // https://www.thethriftybot.com/bearings/Thrifty-Absolute-Magnetic-Encoder-p421607500
         // for more hardware interfacing information.
-        var encoderReadingRaw = m_enc.getAbsolutePosition();
+        var encoderReadingRaw = -m_enc.getAbsolutePosition();
         var retVal = new Rotation2d(encoderReadingRaw * Math.PI * 2 + this.magnetOffset_rad);
 
         SmartDashboard.putNumber(name + "_raw_voltage", m_input.getVoltage());

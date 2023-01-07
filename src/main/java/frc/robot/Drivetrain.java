@@ -15,6 +15,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -49,10 +50,10 @@ public class Drivetrain {
   // 4 - Read out the encoder readings for each module, put them here
   // 5 - Redeploy code, verify that hte encoder readings are correct as each
   // module is manually rotated
-  private final double FL_ENCODER_MOUNT_OFFSET_RAD = -2.157;
-  private final double FR_ENCODER_MOUNT_OFFSET_RAD = -1.575;
-  private final double BL_ENCODER_MOUNT_OFFSET_RAD = -2.180;
-  private final double BR_ENCODER_MOUNT_OFFSET_RAD = -0.803;
+  private final double FL_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-134.3);
+  private final double FR_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-159.6);
+  private final double BL_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-209.5);
+  private final double BR_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-234.5);
 
   // Match this with your UI configuration for your camera used
   // for apriltag detection
@@ -70,14 +71,14 @@ public class Drivetrain {
   private final Translation2d m_backLeftLocation = new Translation2d(-trackWidth_m / 2.0, trackLength_m / 2.0);
   private final Translation2d m_backRightLocation = new Translation2d(-trackWidth_m / 2.0, -trackLength_m / 2.0);
 
-  private final SwerveModule m_frontLeft = new SwerveModule("FL", 1, 2, 0, FL_ENCODER_MOUNT_OFFSET_RAD);
-  private final SwerveModule m_frontRight = new SwerveModule("FR", 3, 4, 1, FR_ENCODER_MOUNT_OFFSET_RAD);
-  private final SwerveModule m_backLeft = new SwerveModule("BL", 5, 6, 2, BL_ENCODER_MOUNT_OFFSET_RAD);
-  private final SwerveModule m_backRight = new SwerveModule("BR", 7, 8, 3, BR_ENCODER_MOUNT_OFFSET_RAD);
+  public final SwerveModule m_frontLeft = new SwerveModule("FL", 1, 2, 0, FL_ENCODER_MOUNT_OFFSET_RAD);
+  public final SwerveModule m_frontRight = new SwerveModule("FR", 3, 4, 1, FR_ENCODER_MOUNT_OFFSET_RAD);
+  public final SwerveModule m_backLeft = new SwerveModule("BL", 5, 6, 2, BL_ENCODER_MOUNT_OFFSET_RAD);
+  public final SwerveModule m_backRight = new SwerveModule("BR", 7, 8, 3, BR_ENCODER_MOUNT_OFFSET_RAD);
 
   private final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
 
-  private final PhotonCamWrapper m_cam = new PhotonCamWrapper(photonCamName, photonCamMountLocation);
+  // private final PhotonCamWrapper m_cam = new PhotonCamWrapper(photonCamName, photonCamMountLocation);
 
   private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
       m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
@@ -130,7 +131,7 @@ public class Drivetrain {
 
   // Updates the field relative position of the robot.
   public void updateOdometry() {
-
+    SmartDashboard.putNumber("gyro_angle", m_gyro.getRotation2d().getDegrees());
     m_poseEstimator.update(
         m_gyro.getRotation2d(),
         new SwerveModulePosition[] {
@@ -141,10 +142,10 @@ public class Drivetrain {
         });
 
     // Put all vision observations into the pose estimator
-    m_cam.update();
-    for (var obs : m_cam.getCurObservations()) {
-      m_poseEstimator.addVisionMeasurement(obs.estFieldPose, obs.time);
-    }
+    // m_cam.update();
+    // for (var obs : m_cam.getCurObservations()) {
+      // m_poseEstimator.addVisionMeasurement(obs.estFieldPose, obs.time);
+    // }
 
     field.getObject("Robot").setPose(m_poseEstimator.getEstimatedPosition());
   }

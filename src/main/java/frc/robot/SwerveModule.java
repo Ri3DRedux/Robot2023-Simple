@@ -27,24 +27,25 @@ public class SwerveModule {
   private final double kModuleMaxAngularAcceleration = 2 * Math.PI; // radians per second squared
 
   // Feedback and Feedforward constants
-  private final double m_drive_kP = 0.0015; 
+  private final double m_drive_kP = 0; 
   private final double m_drive_kI = 0.0;
-  private final double m_drive_kD = 0.0;
-  private final double m_drive_kV = 0.018;
-  private final double m_drive_kS = 0.172;
+  private final double m_drive_kD = 0;
+  private final double m_drive_kV = 0;
+  private final double m_drive_kS = 0.0;
 
-  private final double m_turn_kP  = 0.008;
+  private final double m_turn_kP  = 5.0;
   private final double m_turn_kI  = 0.0;
-  private final double m_turn_kD  = 0.00001;
+  private final double m_turn_kD  = 0.01;
   private final double m_turn_kV  = 0.0; //TODO - we need to tune this
   private final double m_turn_kS  = 0.0; //TODO - we need to tune this
+
 
   // End you-update-em section
   ///////////////////////////////////////////////////////////////
 
 
-  private final SparkMaxWrapper m_driveMotor;
-  private final SparkMaxWrapper m_turningMotor;
+  public final SparkMaxWrapper m_driveMotor;
+  public final SparkMaxWrapper m_turningMotor;
 
   private final ThriftyEnocder m_turningEncoder;
 
@@ -83,6 +84,7 @@ public class SwerveModule {
 
     // Set up turning NEO and the absolute encoder.
     m_turningMotor = new SparkMaxWrapper(turningMotorChannel);
+    m_turningMotor.m_motor.setInverted(true);
     m_turningEncoder = new ThriftyEnocder(namePrefix + "_turning", turningEncoderAnalogChannel, turningEncoderOffset_rad);
 
     // Limit the turn PID Controller's input range between -pi and pi and set the input

@@ -6,10 +6,12 @@ package frc.robot;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 public class SwerveModule {
@@ -48,6 +50,8 @@ public class SwerveModule {
   public final SparkMaxWrapper m_turningMotor;
 
   private final ThriftyEnocder m_turningEncoder;
+
+  private String swerveName;
 
 
   // Gains are for example purposes only - must be determined for your own robot!
@@ -90,6 +94,7 @@ public class SwerveModule {
     // Limit the turn PID Controller's input range between -pi and pi and set the input
     // to be continuous.
     m_turningPIDController.enableContinuousInput(-Math.PI, Math.PI);
+    swerveName = namePrefix;
   }
 
   /**
@@ -106,8 +111,10 @@ public class SwerveModule {
    * @return The current position of the module.
    */
   public SwerveModulePosition getPosition() {
+    var wheelAngle_deg = Math.toDegrees(m_turningMotor.getPosition_rad()) / 21.38;
+    SmartDashboard.putNumber(swerveName + " Angle", wheelAngle_deg);
     var tmp = dtMotorRotToLinear_m(m_driveMotor.getPosition_rad());
-    return new SwerveModulePosition(tmp, m_turningEncoder.getPosition());
+    return new SwerveModulePosition(tmp, Rotation2d.fromDegrees(wheelAngle_deg));
   }
 
   /**

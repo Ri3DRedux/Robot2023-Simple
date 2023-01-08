@@ -50,10 +50,10 @@ public class Drivetrain {
   // 4 - Read out the encoder readings for each module, put them here
   // 5 - Redeploy code, verify that hte encoder readings are correct as each
   // module is manually rotated
-  private final double FL_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-134.3);
-  private final double FR_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-159.6);
-  private final double BL_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-209.5);
-  private final double BR_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-234.5);
+  private final double FL_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-137.0);
+  private final double FR_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-155.0);
+  private final double BL_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(147.0);
+  private final double BR_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(134.0);
 
   // Match this with your UI configuration for your camera used
   // for apriltag detection

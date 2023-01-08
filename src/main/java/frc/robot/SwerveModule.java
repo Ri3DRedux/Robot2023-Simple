@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -29,8 +30,8 @@ public class SwerveModule {
   private final double m_drive_kV = 0;
   private final double m_drive_kS = 0.0;
 
-  private final double m_turn_kP  = 1.0;
-  private final double m_turn_kI  = 0.0;
+  private final double m_turn_kP  = 7.0;
+  private final double m_turn_kI  = 0.01;
   private final double m_turn_kD  = 0.0;
 
 
@@ -100,9 +101,13 @@ public class SwerveModule {
    * @return The current position of the module.
    */
   public SwerveModulePosition getPosition() {
-    var wheelAngle_deg = Math.toDegrees(m_turningMotor.getPosition_rad()) / 21.38;
+    var motorAngle = new Rotation2d((m_turningMotor.getPosition_rad()) / (150/7));
+    var tbangle_deg = Units.radiansToDegrees(MathUtil.angleModulus(m_turningEncoder.getPosition().getRadians()));
+    var motorAngle_deg = Units.radiansToDegrees(MathUtil.angleModulus(motorAngle.getRadians()));
+    SmartDashboard.putNumber(swerveName + " ThriftyEnc Angle", tbangle_deg);
+    SmartDashboard.putNumber(swerveName + " Motor Angle", motorAngle_deg);
     var tmp = dtMotorRotToLinear_m(m_driveMotor.getPosition_rad());
-    return new SwerveModulePosition(tmp, Rotation2d.fromDegrees(wheelAngle_deg));
+    return new SwerveModulePosition(tmp, motorAngle);
   }
 
   /**
@@ -124,7 +129,6 @@ public class SwerveModule {
     final double turnOutput =
         m_turningPIDController.calculate(m_turningEncoder.getPosition().getRadians(), state.angle.getRadians());
 
-    SmartDashboard.putNumber(swerveName + " Act Angle", m_turningEncoder.getPosition().getDegrees());
     SmartDashboard.putNumber(swerveName + " Des Angle", state.angle.getDegrees());
 
     SmartDashboard.putNumber(swerveName + " V", turnOutput);

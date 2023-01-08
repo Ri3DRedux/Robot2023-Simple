@@ -19,6 +19,7 @@ public class ThriftyEnocder {
     private final AnalogInput m_input;
     private final AnalogEncoder m_enc;
 
+
     public ThriftyEnocder(String namePrefix, int port, double magnetOffset_rad) {
         m_input = new AnalogInput(port);
         m_enc = new AnalogEncoder(m_input);

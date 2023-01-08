@@ -29,6 +29,17 @@ public class Robot extends TimedRobot {
   private final double m_autoDriveSpeed_mps = 1.0;
   private Timer m_autoDriveTimer = new Timer();
 
+  // elevator motor controller
+  private final double m_kElevatorSpeed = Math.PI / 2; // radians per second
+
+   // TODO tune this for gravity on the elevator
+  private final double m_kElevatorFeedForward = 0.0; // offset for gravity https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#gravity-offset-elevator
+
+  private final double m_kElevatorMaxRadians = // TODO calculate the radians using the motor's internal encoder at the max height of the elevator (and reduce it a little as a safety margin)
+  private final double m_kElevatorMinRadians = // TODO about 5% of the max radians (as a safety margin)
+
+  private final SparkMaxWrapper m_elevatorSparkMax = new SparkMaxWrapper(-1); // TODO get the CAN ID of the elevator's sparkmax
+
   @Override
   public void robotInit(){
     SmartDashboard.putBoolean("Use Field Relative", false);
@@ -39,7 +50,6 @@ public class Robot extends TimedRobot {
     if(RobotController.getUserButton()){
       m_swerve.resetWheelsToForward();
     }
-
   }
 
   @Override
@@ -71,16 +81,7 @@ public class Robot extends TimedRobot {
       m_swerve.m_gyro.reset();
     }
 
-    // m_swerve.m_backLeft.m_driveMotor.m_motor.set(m_controller.getLeftX());
-    // m_swerve.m_backRight.m_driveMotor.m_motor.set(m_controller.getLeftX());
-    // m_swerve.m_frontLeft.m_driveMotor.m_motor.set(m_controller.getLeftX());
-    // m_swerve.m_frontRight.m_driveMotor.m_motor.set(m_controller.getLeftX());
-
-    // m_swerve.m_backLeft.m_turningMotor.m_motor.set(m_controller.getRightX());
-    // m_swerve.m_backRight.m_turningMotor.m_motor.set(m_controller.getRightX());
-    // m_swerve.m_frontLeft.m_turningMotor.m_motor.set(m_controller.getRightX());
-    // m_swerve.m_frontRight.m_turningMotor.m_motor.set(m_controller.getRightX());
-
+    tryDriveElevator();
   }
 
   @Override
@@ -109,5 +110,18 @@ public class Robot extends TimedRobot {
     final var rot = -m_rotLimiter.calculate(rotDead) * Drivetrain.kMaxAngularSpeed;
 
     m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
+  }
+
+  /**
+   * Drive the elevator if the left bumper or right bumper is pressed.
+   * counterclockwise will drive the elevator up
+   */
+  private void tryDriveElevator() {
+    double rad = m_elevatorSparkMax.getPosition_rad();
+    if (m_controller.getLeftBumper() && rad < m_kElevatorMaxRadians) {
+      m_elevatorSparkMax.setClosedLoopCmd(m_kElevatorSpeed, m_kElevatorFeedForward);
+    } else if (m_controller.getRightBumper() && rad > m_kElevatorMinRadians) { 
+      m_elevatorSparkMax.setClosedLoopCmd(-m_kElevatorSpeed, m_kElevatorFeedForward);
+    }
   }
 }

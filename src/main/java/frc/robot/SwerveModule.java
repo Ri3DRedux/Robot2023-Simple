@@ -4,12 +4,11 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -23,11 +22,6 @@ public class SwerveModule {
   private final double kWheelRadius_in = 3.0;
   private final double kWheelGearRatio = 6.75; 
 
-  // The maximum speeds you _want_ your modules to spin. 
-  // This should be at or below the theoretical maximum of the moduels you actually built.
-  private final double kModuleMaxAngularVelocity = Drivetrain.kMaxAngularSpeed;
-  private final double kModuleMaxAngularAcceleration = 2 * Math.PI; // radians per second squared
-
   // Feedback and Feedforward constants
   private final double m_drive_kP = 0; 
   private final double m_drive_kI = 0.0;
@@ -35,11 +29,9 @@ public class SwerveModule {
   private final double m_drive_kV = 0;
   private final double m_drive_kS = 0.0;
 
-  private final double m_turn_kP  = 5.0;
+  private final double m_turn_kP  = 1.0;
   private final double m_turn_kI  = 0.0;
-  private final double m_turn_kD  = 0.01;
-  private final double m_turn_kV  = 0.0; //TODO - we need to tune this
-  private final double m_turn_kS  = 0.0; //TODO - we need to tune this
+  private final double m_turn_kD  = 0.0;
 
 
   // End you-update-em section
@@ -55,17 +47,14 @@ public class SwerveModule {
 
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final ProfiledPIDController m_turningPIDController =
-      new ProfiledPIDController(
+  private final PIDController m_turningPIDController =
+      new PIDController(
           m_turn_kP,
           m_turn_kI,
-          m_turn_kD,
-          new TrapezoidProfile.Constraints(
-              kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
+          m_turn_kD);
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(m_drive_kS, m_drive_kV);
-  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(m_turn_kS, m_turn_kV);
 
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
@@ -112,7 +101,6 @@ public class SwerveModule {
    */
   public SwerveModulePosition getPosition() {
     var wheelAngle_deg = Math.toDegrees(m_turningMotor.getPosition_rad()) / 21.38;
-    SmartDashboard.putNumber(swerveName + " Angle", wheelAngle_deg);
     var tmp = dtMotorRotToLinear_m(m_driveMotor.getPosition_rad());
     return new SwerveModulePosition(tmp, Rotation2d.fromDegrees(wheelAngle_deg));
   }
@@ -136,10 +124,13 @@ public class SwerveModule {
     final double turnOutput =
         m_turningPIDController.calculate(m_turningEncoder.getPosition().getRadians(), state.angle.getRadians());
 
-    final double turnFeedforward =
-        m_turnFeedforward.calculate(m_turningPIDController.getSetpoint().velocity);
+    SmartDashboard.putNumber(swerveName + " Act Angle", m_turningEncoder.getPosition().getDegrees());
+    SmartDashboard.putNumber(swerveName + " Des Angle", state.angle.getDegrees());
 
-    m_turningMotor.setVoltageCmd(turnOutput + turnFeedforward);
+    SmartDashboard.putNumber(swerveName + " V", turnOutput);
+
+
+    m_turningMotor.setVoltageCmd(turnOutput);
   }
 
   private double dtLinearToMotorRot_rad(double linear_m_in){

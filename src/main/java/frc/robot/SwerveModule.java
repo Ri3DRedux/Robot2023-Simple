@@ -27,7 +27,7 @@ public class SwerveModule {
   private final double m_drive_kP = 0; 
   private final double m_drive_kI = 0.0;
   private final double m_drive_kD = 0;
-  private final double m_drive_kV = 0;
+  private final double m_drive_kV = 12.0 / 4.4196; //Volts per max m/sec
   private final double m_drive_kS = 0.0;
 
   private final double m_turn_kP  = 7.0;

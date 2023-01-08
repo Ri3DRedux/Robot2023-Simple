@@ -8,9 +8,11 @@ package frc.robot;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends TimedRobot {
   private final XboxController m_controller = new XboxController(0);
@@ -27,6 +29,18 @@ public class Robot extends TimedRobot {
   private final double m_autoDriveSpeed_mps = 1.0;
   private Timer m_autoDriveTimer = new Timer();
 
+  @Override
+  public void robotInit(){
+    SmartDashboard.putBoolean("Use Field Relative", false);
+  }
+
+  @Override
+  public void disabledPeriodic(){
+    if(RobotController.getUserButton()){
+      m_swerve.resetWheelsToForward();
+    }
+
+  }
 
   @Override
   public void autonomousInit(){
@@ -49,7 +63,13 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-    driveWithJoystick(false);
+
+    var frel = SmartDashboard.getBoolean("Use Field Relative", false);
+    driveWithJoystick(frel);
+
+    if(m_controller.getAButton()){
+      m_swerve.m_gyro.reset();
+    }
 
     // m_swerve.m_backLeft.m_driveMotor.m_motor.set(m_controller.getLeftX());
     // m_swerve.m_backRight.m_driveMotor.m_motor.set(m_controller.getLeftX());
@@ -88,6 +108,6 @@ public class Robot extends TimedRobot {
     // the right by default.
     final var rot = -m_rotLimiter.calculate(rotDead) * Drivetrain.kMaxAngularSpeed;
 
-    m_swerve.drive(xSpeed, ySpeed, rotDead, fieldRelative);
+    m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
   }
 }

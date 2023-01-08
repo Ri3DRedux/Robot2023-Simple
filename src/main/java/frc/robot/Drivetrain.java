@@ -29,8 +29,8 @@ public class Drivetrain {
 
   // The maximum speed you _want_ the drivetrain to go. It should be at or below
   // the theoretical maximum speeds of the drivetrain you actually built.
-  public static final double kMaxSpeed = 3.0; // 3 meters per second
-  public static final double kMaxAngularSpeed = Math.PI; // 1/2 rotation per second
+  public static final double kMaxSpeed = 2.0; // 2 meters per second
+  public static final double kMaxAngularSpeed = Math.PI*4; // 2 rotation per second
 
   // Physical dimensions of the drivetrain. What's important here is the
   // width and length between the contact patches of the wheels touching the
@@ -76,7 +76,7 @@ public class Drivetrain {
   public final SwerveModule m_backLeft = new SwerveModule("BL", 5, 6, 2, BL_ENCODER_MOUNT_OFFSET_RAD);
   public final SwerveModule m_backRight = new SwerveModule("BR", 7, 8, 3, BR_ENCODER_MOUNT_OFFSET_RAD);
 
-  private final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
+  public final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
 
   // private final PhotonCamWrapper m_cam = new PhotonCamWrapper(photonCamName, photonCamMountLocation);
 
@@ -106,6 +106,13 @@ public class Drivetrain {
   public Drivetrain() {
     m_gyro.reset();
     SmartDashboard.putData("Field", field);
+  }
+
+  public void resetWheelsToForward(){
+    m_frontLeft.m_turningMotor.m_encoder.setPosition(0.0);
+    m_backLeft.m_turningMotor.m_encoder.setPosition(0.0);
+    m_frontRight.m_turningMotor.m_encoder.setPosition(0.0);
+    m_backRight.m_turningMotor.m_encoder.setPosition(0.0);
   }
 
   /**

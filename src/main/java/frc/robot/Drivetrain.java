@@ -131,6 +131,12 @@ public class Drivetrain {
 
   // Updates the field relative position of the robot.
   public void updateOdometry() {
+
+    m_frontLeft.readAngleSensors();
+    m_frontRight.readAngleSensors();
+    m_backLeft.readAngleSensors();
+    m_backRight.readAngleSensors();
+
     SmartDashboard.putNumber("gyro_angle", m_gyro.getRotation2d().getDegrees());
     m_poseEstimator.update(
         m_gyro.getRotation2d(),

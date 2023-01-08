@@ -46,6 +46,9 @@ public class SwerveModule {
 
   private String swerveName;
 
+  private Rotation2d tbangle;
+  private Rotation2d motorAngle;
+
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final PIDController m_turningPIDController =
@@ -87,25 +90,20 @@ public class SwerveModule {
     swerveName = namePrefix;
   }
 
-  /**
-   * Returns the current state of the module.
-   *
-   * @return The current state of the module.
-   */
-  public SwerveModuleState getState() {
-    var tmp = dtMotorRotToLinear_m(m_driveMotor.getVelocity_radpersec());
-    return new SwerveModuleState(tmp, m_turningEncoder.getPosition());
+  public void readAngleSensors(){
+    motorAngle = new Rotation2d((m_turningMotor.getPosition_rad()) / (150/7));
+    tbangle = m_turningEncoder.getPosition();
+    var tbangle_deg = Units.radiansToDegrees(MathUtil.angleModulus(m_turningEncoder.getPosition().getRadians()));
+    var motorAngle_deg = Units.radiansToDegrees(MathUtil.angleModulus(motorAngle.getRadians()));
+    SmartDashboard.putNumber(swerveName + " ThriftyEnc Angle", tbangle_deg);
+    SmartDashboard.putNumber(swerveName + " Motor Angle", motorAngle_deg);
   }
 
   /**
    * @return The current position of the module.
    */
   public SwerveModulePosition getPosition() {
-    var motorAngle = new Rotation2d((m_turningMotor.getPosition_rad()) / (150/7));
-    var tbangle_deg = Units.radiansToDegrees(MathUtil.angleModulus(m_turningEncoder.getPosition().getRadians()));
-    var motorAngle_deg = Units.radiansToDegrees(MathUtil.angleModulus(motorAngle.getRadians()));
-    SmartDashboard.putNumber(swerveName + " ThriftyEnc Angle", tbangle_deg);
-    SmartDashboard.putNumber(swerveName + " Motor Angle", motorAngle_deg);
+
     var tmp = dtMotorRotToLinear_m(m_driveMotor.getPosition_rad());
     return new SwerveModulePosition(tmp, motorAngle);
   }
@@ -116,7 +114,7 @@ public class SwerveModule {
   public void setDesiredState(SwerveModuleState desiredState) {
     // Optimize the reference state to avoid spinning further than 90 degrees
     SwerveModuleState state =
-        SwerveModuleState.optimize(desiredState, m_turningEncoder.getPosition());
+        SwerveModuleState.optimize(desiredState, motorAngle);
 
     // Calculate the drive output with our own arbitrary feed-forward, 
     // but use the onboard PID control for the motor.
@@ -127,7 +125,7 @@ public class SwerveModule {
     // Calculate the turning motor output from the turning PID controller.
     // Do this all onboard and just send a voltage command to the motor.
     final double turnOutput =
-        m_turningPIDController.calculate(m_turningEncoder.getPosition().getRadians(), state.angle.getRadians());
+        m_turningPIDController.calculate(motorAngle.getRadians(), state.angle.getRadians());
 
     SmartDashboard.putNumber(swerveName + " Des Angle", state.angle.getDegrees());
 

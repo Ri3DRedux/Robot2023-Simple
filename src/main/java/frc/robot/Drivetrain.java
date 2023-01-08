@@ -30,7 +30,7 @@ public class Drivetrain {
   // The maximum speed you _want_ the drivetrain to go. It should be at or below
   // the theoretical maximum speeds of the drivetrain you actually built.
   public static final double kMaxSpeed = 2.0; // 2 meters per second
-  public static final double kMaxAngularSpeed = Math.PI*4; // 2 rotation per second
+  public static final double kMaxAngularSpeed = Math.PI*2; // 2 rotation per second
 
   // Physical dimensions of the drivetrain. What's important here is the
   // width and length between the contact patches of the wheels touching the

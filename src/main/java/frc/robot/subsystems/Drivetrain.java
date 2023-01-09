@@ -10,6 +10,7 @@ import java.util.List;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -75,6 +76,32 @@ public class Drivetrain extends SubsystemBase {
   public final SwerveModule m_backLeft = new SwerveModule("BL", 5, 6, 2, BL_ENCODER_MOUNT_OFFSET_RAD);
   public final SwerveModule m_backRight = new SwerveModule("BR", 7, 8, 3, BR_ENCODER_MOUNT_OFFSET_RAD);
 
+  ///////////////////////////////////////////////////////////////
+  // PID Controllers for Aligning Based on Pose Estimation
+
+  private static final 
+
+  private static final double AUTO_ALIGN_X_ERROR_TOLERANCE_IN    = 0.5;
+  private static final double AUTO_ALIGN_Y_ERROR_TOLERANCE_IN    = 0.5;
+  private static final double AUTO_ALIGN_ROT_ERROR_TOLERANCE_DEG = 1.0;
+
+  private static final double autoAlignX_kP = 1.0;
+  private static final double autoAlignX_kI = 0.0;
+  private static final double autoAlignX_kD = 0.0;
+
+  private static final double autoAlignY_kP = 1.0;
+  private static final double autoAlignY_kI = 0.0;
+  private static final double autoAlignY_kD = 0.0;
+
+  private static final double autoAlignRot_kP = 1.0;
+  private static final double autoAlignRot_kI = 0.0;
+  private static final double autoAlignRot_kD = 0.0;
+  
+  private PIDController autoAlignX_PIDController   = new PIDController(autoAlignX_kP, autoAlignX_kI, autoAlignX_kD);
+  private PIDController autoAlignY_PIDController   = new PIDController(autoAlignY_kP, autoAlignY_kI, autoAlignY_kD);
+  private PIDController autoAlignRot_PIDController = new PIDController(autoAlignRot_kP, autoAlignRot_kI, autoAlignRot_kD);
+
+  ///////////////////////////////////////////////////////////////
   
   // Camera auto-align to target things
   public PhotonCamWrapper cam_front = new PhotonCamWrapper("White_Cam", new Transform3d(new Translation3d(trackLength_m/2.0, 0, 0), new Rotation3d(0.0, 0.0, 0.0)));
@@ -109,9 +136,17 @@ public class Drivetrain extends SubsystemBase {
       VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5)),
       VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
 
-  public Drivetrain() {
+  /**
+   * Constructor
+   */
+  public Drivetrain() 
+  {
     m_gyro.reset();
     SmartDashboard.putData("Field", field);
+
+    autoAlignX_PIDController.setTolerance(AUTO_ALIGN_X_ERROR_TOLERANCE_IN);
+    autoAlignY_PIDController.setTolerance(AUTO_ALIGN_Y_ERROR_TOLERANCE_IN);
+    autoAlignRot_PIDController.setTolerance(AUTO_ALIGN_ROT_ERROR_TOLERANCE_DEG);
   }
 
   public void resetWheelsToForward(){
@@ -146,7 +181,6 @@ public class Drivetrain extends SubsystemBase {
     updateOdometry();
   }
 
-
   // Updates the field relative position of the robot.
   public void updateOdometry() {
 
@@ -172,7 +206,6 @@ public class Drivetrain extends SubsystemBase {
         m_poseEstimator.addVisionMeasurement(obs.estFieldPose, obs.time);
       }
     }
-
 
     field.getObject("Robot").setPose(m_poseEstimator.getEstimatedPosition());
   }

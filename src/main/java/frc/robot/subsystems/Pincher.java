@@ -5,17 +5,35 @@ import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Robot;
 
 public class Pincher extends SubsystemBase{
 
     DoubleSolenoid pincherSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1); //TODO WHERE IS THIS PLUGGED INTO IT MIGHT NOT BE ZERO
 
+    private DoubleSolenoid.Value pinchPosition = DoubleSolenoid.Value.kForward;
+    private DoubleSolenoid.Value releasePosition = DoubleSolenoid.Value.kReverse;
+
+    Robot robot;
+
+    public Pincher(Robot robot){
+        this.robot = robot;
+    }
+
     public void pinch() {
-        pincherSolenoid.set(DoubleSolenoid.Value.kForward);
+        pincherSolenoid.set(pinchPosition);
     }
 
     public void release() {
-        pincherSolenoid.set(DoubleSolenoid.Value.kReverse);
+        pincherSolenoid.set(releasePosition);
+    }
+
+    public boolean isPinched() {
+        return pincherSolenoid.get() == pinchPosition;
+    }
+
+    public boolean isReleased() {
+        return pincherSolenoid.get() == releasePosition;
     }
 
     public CommandBase pinchCmd() {

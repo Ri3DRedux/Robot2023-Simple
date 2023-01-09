@@ -18,13 +18,15 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Pincher;
 
 public class Robot extends TimedRobot {
   private final CommandXboxController m_driver_controller = new CommandXboxController(0);
   private final CommandXboxController m_operator_controller = new CommandXboxController(1);
-  private final Drivetrain m_swerve = new Drivetrain();
-  private final Arm m_arm = new Arm();
-  private final Intake m_intake = new Intake();
+  public final Drivetrain swerve = new Drivetrain();
+  public final Arm arm = new Arm(this);
+  public final Intake intake = new Intake(this);
+  public final Pincher pincher = new Pincher(this);
 
   private final Pose2d m_autoStartPose = new Pose2d();
 
@@ -37,7 +39,7 @@ public class Robot extends TimedRobot {
     // Record both DS control and joystick data
     DriverStation.startDataLog(DataLogManager.getLog());
 
-    CommandScheduler.getInstance().registerSubsystem(m_swerve, m_arm, m_intake);
+    CommandScheduler.getInstance().registerSubsystem(swerve, arm, intake, pincher);
 
     configureButtonBindings();
 
@@ -52,14 +54,14 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledPeriodic() {
     if (RobotController.getUserButton()) {
-      m_swerve.resetWheelsToForward();
+      swerve.resetWheelsToForward();
     }
 
   }
 
   @Override
   public void autonomousInit() {
-    m_swerve.setKnownPosition(m_autoStartPose);
+    swerve.setKnownPosition(m_autoStartPose);
 
   }
 
@@ -79,13 +81,12 @@ public class Robot extends TimedRobot {
   }
 
   public void configureButtonBindings() {
-
     m_driver_controller.a().onTrue(
         Commands.runOnce(() -> {
-          m_swerve.m_gyro.reset();
+          swerve.m_gyro.reset();
         }));
 
-    m_swerve.setDefaultCommand(Commands.run(
+    swerve.setDefaultCommand(Commands.run(
         () -> {
           var fieldRelative = SmartDashboard.getBoolean("Use Field Relative", false);
           // the xbox controller we use has around a 5% center error
@@ -107,8 +108,8 @@ public class Robot extends TimedRobot {
           // the right by default.
           final var rot = -rotDead * Drivetrain.kMaxAngularSpeed;
 
-          m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
-        }, m_swerve));
+          swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
+        }, swerve));
 
     m_driver_controller.rightBumper().onTrue(Commands.run(() -> {
 
@@ -126,14 +127,9 @@ public class Robot extends TimedRobot {
 
       var rot = 0;
 
-      // if (targetVisible) {
-      //   var angleErr = camAngle - CAM_ALIGN_TARGET_YAW;
-      //   rot = angleErr * CAM_ALIGN_P_GAIN;
-      // } 
+      swerve.drive(xSpeed, ySpeed, rot, false);
 
-      m_swerve.drive(xSpeed, ySpeed, rot, false);
-
-    }, m_swerve));
+    }, swerve));
   }
 
   public void loggingPeriodic() {
@@ -147,7 +143,5 @@ public class Robot extends TimedRobot {
 
     var canStatus = RobotController.getCANStatus();
     SmartDashboard.putNumber("CAN Bandwidth", canStatus.percentBusUtilization);
-    //canStatus.busOffCount
-    canStatus.
   }
 }

@@ -78,9 +78,9 @@ public class Arm extends SubsystemBase {
     final double EXTENSION_MAX_INCHES = 12; // inches
 
     // final double EXTENSION_CONFLICT_MAX_ALLOWED = 0.5;
-    // final double PIVOT_ANGLE_CONFLICT_THRESHOLD = 0.0; // total guess but this is the angle or length where mechanical
-                                                       // conflict happpens
-
+    // final double PIVOT_ANGLE_CONFLICT_THRESHOLD = 0.0; // total guess but this is
+    // the angle or length where mechanical
+    // conflict happpens
 
     CANSparkMax pivotMotor;
     PivotSensor pivotSensor;
@@ -125,7 +125,7 @@ public class Arm extends SubsystemBase {
         // positive volts up
         // return success (true if can move, false if move was blocked)
         if (volts > 0) {
-            if (pivotSensor.atTop()) {
+            if (pivotSensor.atTop() || robot.intake.isUp()) {
                 pivotMotor.stopMotor();
                 return false;
             } else {
@@ -133,7 +133,9 @@ public class Arm extends SubsystemBase {
                 return true;
             }
         } else {
-            if (pivotSensor.atBottom() || getExtensionPosition() > 0) {
+            if (pivotSensor.atBottom()
+                    || (getExtensionPosition() > 0 && getPivotPosition() <= 0)
+                    || (robot.intake.isUp() && ! isPivotOutOfTheWayOfTheIntake())) {
                 pivotMotor.stopMotor();
                 return false;
             } else {
@@ -179,6 +181,10 @@ public class Arm extends SubsystemBase {
 
     public double getPivotPosition() {
         return pivotSensor.getAngleDeg();
+    }
+
+    public boolean isPivotOutOfTheWayOfTheIntake() {
+        return getPivotPosition() > 0;
     }
 
     public void periodic() {
@@ -242,75 +248,82 @@ public class Arm extends SubsystemBase {
     }
 
     // public void setPositionCmd(ArmPos newCmd) {
-        // curCmd = newCmd;
+    // curCmd = newCmd;
     // }
 
     // public void update() {
 
-    //     // Read Sensors
-    //     extensionPosition_in = getExtensionPosition(); // already converted
+    // // Read Sensors
+    // extensionPosition_in = getExtensionPosition(); // already converted
 
-    //     double curPivotPos_deg = pivotSensor.getAngleDeg();
+    // double curPivotPos_deg = pivotSensor.getAngleDeg();
 
-    //     ///////////////////////////////////////////////////////
-    //     // Extension Control
+    // ///////////////////////////////////////////////////////
+    // // Extension Control
 
-    //     double desExtensionPosition_in = extensionPosition_in; // default to not change position
+    // double desExtensionPosition_in = extensionPosition_in; // default to not
+    // change position
 
-    //     // conflict management - cap the maximum extension if we're below the angle
-    //     // where conflicts happen
-    //     if (curPivotPos_deg < PIVOT_ANGLE_CONFLICT_THRESHOLD) {
-    //         desExtensionPosition_in = Math.min(curCmd.extension, EXTENSION_CONFLICT_MAX_ALLOWED);
-    //     } else {
-    //         desExtensionPosition_in = curCmd.extension;
-    //     }
+    // // conflict management - cap the maximum extension if we're below the angle
+    // // where conflicts happen
+    // if (curPivotPos_deg < PIVOT_ANGLE_CONFLICT_THRESHOLD) {
+    // desExtensionPosition_in = Math.min(curCmd.extension,
+    // EXTENSION_CONFLICT_MAX_ALLOWED);
+    // } else {
+    // desExtensionPosition_in = curCmd.extension;
+    // }
 
-    //     // Saturated PID control
-    //     double motorCmdV = extensionPIDController.calculate(extensionPosition_in, desExtensionPosition_in);
-    //     motorCmdV = Math.min(motorCmdV, EXTENSION_MAX_VOLTS);
-    //     motorCmdV = Math.max(motorCmdV, -1.0 * EXTENSION_MAX_VOLTS);
-    //     boolean atTarget = extensionPIDController.atSetpoint();
+    // // Saturated PID control
+    // double motorCmdV = extensionPIDController.calculate(extensionPosition_in,
+    // desExtensionPosition_in);
+    // motorCmdV = Math.min(motorCmdV, EXTENSION_MAX_VOLTS);
+    // motorCmdV = Math.max(motorCmdV, -1.0 * EXTENSION_MAX_VOLTS);
+    // boolean atTarget = extensionPIDController.atSetpoint();
 
-    //     SmartDashboard.putNumber("Arm Extension Desired in", extensionPosition_in);
-    //     SmartDashboard.putNumber("Arm Extension Desired Extension", desExtensionPosition_in);
-    //     SmartDashboard.putNumber("Arm Cmd Voltage", motorCmdV);
+    // SmartDashboard.putNumber("Arm Extension Desired in", extensionPosition_in);
+    // SmartDashboard.putNumber("Arm Extension Desired Extension",
+    // desExtensionPosition_in);
+    // SmartDashboard.putNumber("Arm Cmd Voltage", motorCmdV);
 
-    //     // moveEx
+    // // moveEx
 
-    //     ///////////////////////////////////////////////////////
-    //     // Angle Control
+    // ///////////////////////////////////////////////////////
+    // // Angle Control
 
-    //     double desPivotPos_deg = curPivotPos_deg; // default to not change position
+    // double desPivotPos_deg = curPivotPos_deg; // default to not change position
 
-    //     // conflict management - cap the angle if we aren't retracted on the extension
-    //     // enough
-    //     if (extensionPosition_in > EXTENSION_CONFLICT_MAX_ALLOWED) {
-    //         desPivotPos_deg = Math.max(curCmd.angle, PIVOT_ANGLE_CONFLICT_THRESHOLD);
-    //     } else {
-    //         desPivotPos_deg = curCmd.angle;
-    //     }
+    // // conflict management - cap the angle if we aren't retracted on the
+    // extension
+    // // enough
+    // if (extensionPosition_in > EXTENSION_CONFLICT_MAX_ALLOWED) {
+    // desPivotPos_deg = Math.max(curCmd.angle, PIVOT_ANGLE_CONFLICT_THRESHOLD);
+    // } else {
+    // desPivotPos_deg = curCmd.angle;
+    // }
 
-    //     // PID Control
-    //     // Positive voltage should move the arm away from the intake and toward scoring
-    //     // positions
-    //     double pivotFeedbackV = pivotPIDController.calculate(curPivotPos_deg, desPivotPos_deg);
+    // // PID Control
+    // // Positive voltage should move the arm away from the intake and toward
+    // scoring
+    // // positions
+    // double pivotFeedbackV = pivotPIDController.calculate(curPivotPos_deg,
+    // desPivotPos_deg);
 
-    //     // Feedforward - delete gravity
-    //     double pivotFeedforwardV = Math.cos(Units.degreesToRadians(curPivotPos_deg)) * pivot_kG;
+    // // Feedforward - delete gravity
+    // double pivotFeedforwardV = Math.cos(Units.degreesToRadians(curPivotPos_deg))
+    // * pivot_kG;
 
-    //     SmartDashboard.putNumber("Arm Pivot Angle Actual deg", curPivotPos_deg);
-    //     SmartDashboard.putNumber("Arm Pivot Angle Desired deg", desPivotPos_deg);
-    //     SmartDashboard.putNumber("Arm Pivot Angle FB Cmd Voltage", pivotFeedbackV);
-    //     SmartDashboard.putNumber("Arm Pivot Angle FF Cmd Voltage", pivotFeedforwardV);
+    // SmartDashboard.putNumber("Arm Pivot Angle Actual deg", curPivotPos_deg);
+    // SmartDashboard.putNumber("Arm Pivot Angle Desired deg", desPivotPos_deg);
+    // SmartDashboard.putNumber("Arm Pivot Angle FB Cmd Voltage", pivotFeedbackV);
+    // SmartDashboard.putNumber("Arm Pivot Angle FF Cmd Voltage",
+    // pivotFeedforwardV);
 
-    //     movePivot(pivotFeedforwardV + pivotFeedbackV);
+    // movePivot(pivotFeedforwardV + pivotFeedbackV);
 
-    //     prevCmd = curCmd;
+    // prevCmd = curCmd;
     // }
 
 }
-
-
 
 // // A basic structure that should be straightforward and not completely insane
 // to understand for a command

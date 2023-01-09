@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.SwerveModule;
+import frc.robot.camera.PhotonCamWrapper;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain extends SubsystemBase {
@@ -73,10 +74,9 @@ public class Drivetrain extends SubsystemBase {
 
   
   // Camera auto-align to target things
-  public final PhotonCamera cam = new PhotonCamera("Black_Cam");
-  public final double CAM_ALIGN_P_GAIN = Drivetrain.kMaxAngularSpeed * 0.2 / 40.0;// radpersec per degree
-  public final double CAM_ALIGN_TARGET_YAW = 0.0;
-  public final int CAM_ALIGN_ID = 1; // only align to ID 1
+  public final PhotonCamWrapper cam = new PhotonCamWrapper("Black_Cam");
+  public static final double CAM_ALIGN_P_GAIN = Drivetrain.kMaxAngularSpeed * 0.2 / 40.0;// radpersec per degree
+  public static final double CAM_ALIGN_TARGET_YAW = 0.0;
 
 
   public final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
@@ -147,25 +147,11 @@ public class Drivetrain extends SubsystemBase {
   public void updateCamera(){
     //Vision closed-loop alignment - if requested, override 
     // rotation by a closed-loop P control to turn toward the target
-    double camAngle = CAM_ALIGN_TARGET_YAW;
-    boolean targetVisible = false;
+    var camAngle = cam.getTgtYaw();
 
-    if(cam.hasTargets() && cam.isConnected())
-    {
-        var res = cam.getLatestResult();
 
-        for(PhotonTrackedTarget tgt : res.getTargets())
-        {
-          if(tgt.getFiducialId() == CAM_ALIGN_ID)
-          {
-            camAngle = tgt.getYaw();
-            targetVisible = true;
-          }
-        }
-    }
-
-    SmartDashboard.putBoolean("Cam Target Visible", targetVisible);
-    SmartDashboard.putNumber("Cam Target Angle Deg", camAngle);
+    SmartDashboard.putBoolean("Cam Target Visible", camAngle.isPresent());
+    SmartDashboard.putNumber("Cam Target Angle Deg", camAngle.orElse(0.0));
   }
 
   // Updates the field relative position of the robot.
@@ -185,12 +171,6 @@ public class Drivetrain extends SubsystemBase {
             m_backLeft.getPosition(),
             m_backRight.getPosition()
         });
-
-    // Put all vision observations into the pose estimator
-    // m_cam.update();
-    // for (var obs : m_cam.getCurObservations()) {
-      // m_poseEstimator.addVisionMeasurement(obs.estFieldPose, obs.time);
-    // }
 
     field.getObject("Robot").setPose(m_poseEstimator.getEstimatedPosition());
   }

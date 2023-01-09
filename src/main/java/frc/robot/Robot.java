@@ -167,12 +167,15 @@ public class Robot extends TimedRobot {
       // return positive values when you pull to the right by default.
       final var ySpeed = -yDead * Drivetrain.kMaxSpeed;
 
-      var rot = 0;
+      var rot = 0.0;
 
-      // if (targetVisible) {
-      //   var angleErr = camAngle - CAM_ALIGN_TARGET_YAW;
-      //   rot = angleErr * CAM_ALIGN_P_GAIN;
-      // } 
+      //@Vasista inject the wpi apriltag stuff here 
+      var camYaw = m_swerve.cam.getTgtYaw();
+
+      if (camYaw.isPresent()) {
+        var angleErr = camYaw.get() - Drivetrain.CAM_ALIGN_TARGET_YAW;
+        rot = angleErr * Drivetrain.CAM_ALIGN_P_GAIN;
+      } 
 
       m_swerve.drive(xSpeed, ySpeed, rot, false);
 

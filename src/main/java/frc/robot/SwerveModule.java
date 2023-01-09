@@ -42,7 +42,7 @@ public class SwerveModule {
   public final SparkMaxWrapper m_driveMotor;
   public final SparkMaxWrapper m_turningMotor;
 
-  private final ThriftyEnocder m_turningEncoder;
+  private final ThriftyEncoder m_turningEncoder;
 
   private String swerveName;
 
@@ -82,7 +82,7 @@ public class SwerveModule {
     // Set up turning NEO and the absolute encoder.
     m_turningMotor = new SparkMaxWrapper(turningMotorChannel);
     m_turningMotor.m_motor.setInverted(true);
-    m_turningEncoder = new ThriftyEnocder(namePrefix + "_turning", turningEncoderAnalogChannel, turningEncoderOffset_rad);
+    m_turningEncoder = new ThriftyEncoder(namePrefix + "_turning", turningEncoderAnalogChannel, turningEncoderOffset_rad);
 
     // Limit the turn PID Controller's input range between -pi and pi and set the input
     // to be continuous.

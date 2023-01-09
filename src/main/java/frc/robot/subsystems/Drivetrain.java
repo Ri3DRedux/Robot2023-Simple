@@ -2,7 +2,10 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot;
+package frc.robot.subsystems;
+
+import org.photonvision.PhotonCamera;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import com.kauailabs.navx.frc.AHRS;
 
@@ -15,14 +18,14 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.camera.PhotonCamWrapper;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.SwerveModule;
 
 /** Represents a swerve drive style drivetrain. */
-public class Drivetrain {
+public class Drivetrain extends SubsystemBase {
 
   ///////////////////////////////////////////////////////////////
   // Update all these for your drivetrain
@@ -55,14 +58,6 @@ public class Drivetrain {
   private final double BL_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(147.0);
   private final double BR_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(134.0);
 
-  // Match this with your UI configuration for your camera used
-  // for apriltag detection
-  private final String photonCamName = "PhotonVision";
-
-  // Configure the location and rotation of the camera mounting, relative to your
-  // robot's origin.
-  private final Transform3d photonCamMountLocation = new Transform3d();
-
   // End you-update-em section
   ///////////////////////////////////////////////////////////////
 
@@ -75,6 +70,14 @@ public class Drivetrain {
   public final SwerveModule m_frontRight = new SwerveModule("FR", 3, 4, 1, FR_ENCODER_MOUNT_OFFSET_RAD);
   public final SwerveModule m_backLeft = new SwerveModule("BL", 5, 6, 2, BL_ENCODER_MOUNT_OFFSET_RAD);
   public final SwerveModule m_backRight = new SwerveModule("BR", 7, 8, 3, BR_ENCODER_MOUNT_OFFSET_RAD);
+
+  
+  // Camera auto-align to target things
+  public final PhotonCamera cam = new PhotonCamera("Black_Cam");
+  public final double CAM_ALIGN_P_GAIN = Drivetrain.kMaxAngularSpeed * 0.2 / 40.0;// radpersec per degree
+  public final double CAM_ALIGN_TARGET_YAW = 0.0;
+  public final int CAM_ALIGN_ID = 1; // only align to ID 1
+
 
   public final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
 
@@ -134,6 +137,35 @@ public class Drivetrain {
     m_frontRight.setDesiredState(swerveModuleStates[1]);
     m_backLeft.setDesiredState(swerveModuleStates[2]);
     m_backRight.setDesiredState(swerveModuleStates[3]);
+  }
+
+  public void periodic(){
+    updateCamera();
+    updateOdometry();
+  }
+
+  public void updateCamera(){
+    //Vision closed-loop alignment - if requested, override 
+    // rotation by a closed-loop P control to turn toward the target
+    double camAngle = CAM_ALIGN_TARGET_YAW;
+    boolean targetVisible = false;
+
+    if(cam.hasTargets() && cam.isConnected())
+    {
+        var res = cam.getLatestResult();
+
+        for(PhotonTrackedTarget tgt : res.getTargets())
+        {
+          if(tgt.getFiducialId() == CAM_ALIGN_ID)
+          {
+            camAngle = tgt.getYaw();
+            targetVisible = true;
+          }
+        }
+    }
+
+    SmartDashboard.putBoolean("Cam Target Visible", targetVisible);
+    SmartDashboard.putNumber("Cam Target Angle Deg", camAngle);
   }
 
   // Updates the field relative position of the robot.

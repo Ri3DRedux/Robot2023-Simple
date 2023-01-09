@@ -15,9 +15,9 @@ import edu.wpi.first.math.util.Units;
  */
 public class SparkMaxWrapper {
     
-    CANSparkMax m_motor;
-    SparkMaxPIDController m_pidController;
-    RelativeEncoder m_encoder;
+    public CANSparkMax m_motor;
+    public SparkMaxPIDController m_pidController;
+    public RelativeEncoder m_encoder;
 
 
     public SparkMaxWrapper(int can_id){

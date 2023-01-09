@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 /**
  * Small class to wrapper a Thriftybot analog encoder
  */
-public class ThriftyEnocder {
+public class ThriftyEncoder {
 
     private final String name;
 
@@ -21,7 +21,7 @@ public class ThriftyEnocder {
     private final AnalogEncoder m_enc;
 
 
-    public ThriftyEnocder(String namePrefix, int port, double magnetOffset_rad) {
+    public ThriftyEncoder(String namePrefix, int port, double magnetOffset_rad) {
         m_input = new AnalogInput(port);
         m_enc = new AnalogEncoder(m_input);
         name = namePrefix + "_TBEnc";

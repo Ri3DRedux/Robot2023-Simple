@@ -35,7 +35,7 @@ public class Drivetrain {
   // Physical dimensions of the drivetrain. What's important here is the
   // width and length between the contact patches of the wheels touching the
   // ground
-  // (which likely isn't the same as your frame perimiter)
+  // (which likely isn't the same as your frame perimeter)
   private final double trackWidth_m = Units.inchesToMeters(27);
   private final double trackLength_m = Units.inchesToMeters(27);
 

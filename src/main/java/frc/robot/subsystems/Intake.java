@@ -1,5 +1,8 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.playingwithfusion.TimeOfFlight;
 import com.playingwithfusion.TimeOfFlight.RangingMode;
 
@@ -9,27 +12,29 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.wpilibj2.command.Commands;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 
 public class Intake extends SubsystemBase {
-
-    public final CANSparkMax m_motor_left = new CANSparkMax(21, MotorType.kBrushed); // TODO get the CAN ID of the intake's left sparkmax
-    public final CANSparkMax m_motor_right = new CANSparkMax(22, MotorType.kBrushed); // TODO get the CAN ID of the intake's right sparkmax
-    public final TimeOfFlight m_tof = new TimeOfFlight(-1); // TODO get a CAN ID for the ToF sensor
+    public final TalonSRX m_motor_left = new TalonSRX(0);
+    public final TalonSRX m_motor_right = new TalonSRX(8); 
+    public final TimeOfFlight m_tof = new TimeOfFlight(0); 
 
     // TODO use the ToF to run intake until it detects an object was captured
 
     public Intake() {
+        m_motor_left.setNeutralMode(NeutralMode.Brake);
+        //m_motor_left.restoreFactoryDefaults();
+        //m_motor_left.setIdleMode(IdleMode.kBrake);
+        //m_motor_left.setSmartCurrentLimit(40);
+        //m_motor_left.burnFlash();
 
-        m_motor_left.restoreFactoryDefaults();
-        m_motor_left.setIdleMode(IdleMode.kBrake);
-        m_motor_left.setSmartCurrentLimit(40);
-        m_motor_left.burnFlash();
-
-        m_motor_right.restoreFactoryDefaults();
-        m_motor_right.setIdleMode(IdleMode.kBrake);
-        m_motor_right.setSmartCurrentLimit(40);
-        m_motor_right.burnFlash();
+        m_motor_right.setNeutralMode(NeutralMode.Brake);
+        m_motor_right.setInverted(true);
+        //m_motor_right.restoreFactoryDefaults();
+        //m_motor_right.setIdleMode(IdleMode.kBrake);
+        //m_motor_right.setSmartCurrentLimit(40);
+        //m_motor_right.burnFlash();
 
         stop();
         setDefaultCommand(Commands.runOnce(() -> { stop(); }, this));
@@ -38,8 +43,8 @@ public class Intake extends SubsystemBase {
     }
 
     public void stop() {
-        m_motor_left.setVoltage(0);
-        m_motor_right.setVoltage(0);
+        m_motor_left.set(ControlMode.PercentOutput,0);
+        m_motor_right.set(ControlMode.PercentOutput,0);
     }
 
     public void periodic() {
@@ -47,11 +52,11 @@ public class Intake extends SubsystemBase {
     }
 
     public void moveLeftMotor(double volts) {
-        m_motor_left.setVoltage(volts);
+        m_motor_left.set(ControlMode.PercentOutput,volts/RobotController.getBatteryVoltage());
     }
 
     public void moveRightMotor(double volts) {
-        m_motor_right.setVoltage(volts);
+        m_motor_right.set(ControlMode.PercentOutput,volts/RobotController.getBatteryVoltage());
     }
 
     public void intake() {
@@ -59,13 +64,13 @@ public class Intake extends SubsystemBase {
     }
 
     public void intake(double volts) {
-        m_motor_left.setVoltage(-volts);
-        m_motor_right.setVoltage(-volts);
+        m_motor_left.set(ControlMode.PercentOutput,-volts/RobotController.getBatteryVoltage());
+        m_motor_right.set(ControlMode.PercentOutput,-volts/RobotController.getBatteryVoltage());
     }
 
     public void intake(double leftMotorVolts, double rightMotorVolts) {
-        m_motor_left.setVoltage(-leftMotorVolts);
-        m_motor_right.setVoltage(-rightMotorVolts);
+        m_motor_left.set(ControlMode.PercentOutput,-leftMotorVolts/RobotController.getBatteryVoltage());
+        m_motor_right.set(ControlMode.PercentOutput,-rightMotorVolts/RobotController.getBatteryVoltage());
     }
 
     public void outtake() {
@@ -73,13 +78,13 @@ public class Intake extends SubsystemBase {
     }
 
     public void outtake(double volts) {
-        m_motor_left.setVoltage(volts);
-        m_motor_right.setVoltage(volts);
+        m_motor_left.set(ControlMode.PercentOutput,volts/RobotController.getBatteryVoltage());
+        m_motor_right.set(ControlMode.PercentOutput,volts/RobotController.getBatteryVoltage());
     }
 
     public void outtake(double leftMotorVolts, double rightMotorVolts) {
-        m_motor_left.setVoltage(leftMotorVolts);
-        m_motor_right.setVoltage(rightMotorVolts);
+        m_motor_left.set(ControlMode.PercentOutput,leftMotorVolts/RobotController.getBatteryVoltage());
+        m_motor_right.set(ControlMode.PercentOutput,rightMotorVolts/RobotController.getBatteryVoltage());
 
     }
 

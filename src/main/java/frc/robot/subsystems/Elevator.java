@@ -40,11 +40,11 @@ public class Elevator extends SubsystemBase {
     }
 
     public boolean atBottom() {
-        return getHeight() <= m_kTOFbottom;
+        return getToFHeight() <= m_kTOFbottom;
     }
 
     public boolean atTop() {
-        return getHeight() >= m_kTOFtop;
+        return getToFHeight() >= m_kTOFtop;
     }
 
     public void stop() {

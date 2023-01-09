@@ -111,19 +111,20 @@ public class Robot extends TimedRobot {
         .leftBumper()
         .whileTrue(
             Commands.run(() -> {
-              m_intake.intake(12);
+              m_intake.intake(7);
             }, m_intake));
 
     m_operator_controller // outtake
         .rightBumper()
         .whileTrue(
             Commands.run(() -> {
-              m_intake.outtake(12);
+              m_intake.outtake(5);
             }, m_intake));
 
     m_arm.setDefaultCommand(Commands.run(
         () -> {
-          var voltage = m_operator_controller.getRightY() * 3; // should we put a deadband on this?
+          var input = MathUtil.applyDeadband(m_operator_controller.getRightY(), 0.05);
+          var voltage = input * 2.5; // should we put a deadband on this?
           m_arm.move(voltage);
         },m_arm));
 

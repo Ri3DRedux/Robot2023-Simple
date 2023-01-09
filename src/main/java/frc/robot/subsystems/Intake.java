@@ -13,8 +13,8 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 
 public class Intake extends SubsystemBase {
 
-    public final CANSparkMax m_motor_left = new CANSparkMax(-1, MotorType.kBrushed); // TODO get the CAN ID of the intake's left sparkmax
-    public final CANSparkMax m_motor_right = new CANSparkMax(-1, MotorType.kBrushed); // TODO get the CAN ID of the intake's right sparkmax
+    public final CANSparkMax m_motor_left = new CANSparkMax(21, MotorType.kBrushed); // TODO get the CAN ID of the intake's left sparkmax
+    public final CANSparkMax m_motor_right = new CANSparkMax(22, MotorType.kBrushed); // TODO get the CAN ID of the intake's right sparkmax
     public final TimeOfFlight m_tof = new TimeOfFlight(-1); // TODO get a CAN ID for the ToF sensor
 
     // TODO use the ToF to run intake until it detects an object was captured

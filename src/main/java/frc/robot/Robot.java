@@ -27,17 +27,16 @@ public class Robot extends TimedRobot {
   private final Elevator m_elevator = new Elevator();
   private final Arm m_arm = new Arm();
   private final Intake m_intake = new Intake();
-
   private final Pose2d m_autoStartPose = new Pose2d();
 
   @Override
   public void robotInit() {
-    CommandScheduler.getInstance().registerSubsystem(m_elevator);
+    CommandScheduler.getInstance().registerSubsystem(m_elevator, m_elevator, m_arm, m_intake);
     configureButtonBindings();
 
     SmartDashboard.putBoolean("Use Field Relative", false);
 
-    cam.setVersionCheckEnabled(false);
+    //cam.setVersionCheckEnabled(false);
   }
 
   @Override
@@ -114,9 +113,10 @@ public class Robot extends TimedRobot {
         () -> {
           var voltage = m_operator_controller.getRightY() * 3; // should we put a deadband on this?
           m_arm.move(voltage);
-        }));
+        },m_arm));
 
-    m_swerve.setDefaultCommand(Commands.run(
+    m_swerve.setDefaultCommand(Commands
+      .run(
         () -> {
           var fieldRelative = SmartDashboard.getBoolean("Use Field Relative", false);
           // the xbox controller we use has around a 5% center error
@@ -167,5 +167,8 @@ public class Robot extends TimedRobot {
     }, m_swerve));
 
   }
-
+  YOURCLASS f = new YOURCLASS(); //Make an object of your class
+  Field a = f.getClass().getDeclaredField("privateListObject");    //get private declared object from class
+  a.setAccessible(true);  //Make it accessible so you can access it
+  ArrayList al = (ArrayList) a.get(f);    // At last it's yours.
 }

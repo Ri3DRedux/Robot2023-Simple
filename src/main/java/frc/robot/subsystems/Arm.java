@@ -12,8 +12,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Arm extends SubsystemBase {
-
-    public CANSparkMax m_motor = new CANSparkMax(-1, MotorType.kBrushed);
+    //TODO: Set CAN ID here!!!
+    public CANSparkMax m_motor = new CANSparkMax(20, MotorType.kBrushless);
     public RelativeEncoder m_encoder;
     private static final double SCALE_FACTOR = 1;
 

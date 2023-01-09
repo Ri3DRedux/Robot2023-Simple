@@ -35,11 +35,6 @@ public class Robot extends TimedRobot {
    // TODO tune this for gravity on the elevator
   private final double m_kElevatorFeedForward = 0.0; // offset for gravity https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#gravity-offset-elevator
 
-  private final double m_kElevatorMaxRadians = // TODO calculate the radians using the motor's internal encoder at the max height of the elevator (and reduce it a little as a safety margin)
-  private final double m_kElevatorMinRadians = // TODO about 5% of the max radians (as a safety margin)
-
-  private final SparkMaxWrapper m_elevatorSparkMax = new SparkMaxWrapper(-1); // TODO get the CAN ID of the elevator's sparkmax
-
   @Override
   public void robotInit(){
     SmartDashboard.putBoolean("Use Field Relative", false);
@@ -81,7 +76,6 @@ public class Robot extends TimedRobot {
       m_swerve.m_gyro.reset();
     }
 
-    tryDriveElevator();
   }
 
   @Override
@@ -116,12 +110,4 @@ public class Robot extends TimedRobot {
    * Drive the elevator if the left bumper or right bumper is pressed.
    * counterclockwise will drive the elevator up
    */
-  private void tryDriveElevator() {
-    double rad = m_elevatorSparkMax.getPosition_rad();
-    if (m_controller.getLeftBumper() && rad < m_kElevatorMaxRadians) {
-      m_elevatorSparkMax.setClosedLoopCmd(m_kElevatorSpeed, m_kElevatorFeedForward);
-    } else if (m_controller.getRightBumper() && rad > m_kElevatorMinRadians) { 
-      m_elevatorSparkMax.setClosedLoopCmd(-m_kElevatorSpeed, m_kElevatorFeedForward);
-    }
-  }
 }

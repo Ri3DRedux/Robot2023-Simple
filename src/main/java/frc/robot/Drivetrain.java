@@ -136,6 +136,10 @@ public class Drivetrain {
     m_backRight.setDesiredState(swerveModuleStates[3]);
   }
 
+  public void robotPeriodic(){
+    updateOdometry();
+  }
+
   // Updates the field relative position of the robot.
   public void updateOdometry() {
 

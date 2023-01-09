@@ -15,8 +15,10 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends TimedRobot {
-  private final XboxController m_controller = new XboxController(0);
+  private final XboxController m_driver_controller = new XboxController(0);
+  private final XboxController m_operator_controller = new XboxController(1);
   private final Drivetrain m_swerve = new Drivetrain();
+  private final Elevator m_elevator = new Elevator();
 
   // Slew rate limiters to make joystick inputs more gentle; 1/3 sec from 0 to 1.
   private final SlewRateLimiter m_xspeedLimiter = new SlewRateLimiter(3);
@@ -28,12 +30,6 @@ public class Robot extends TimedRobot {
   private final double m_autoDriveTime_sec = 2.0;
   private final double m_autoDriveSpeed_mps = 1.0;
   private Timer m_autoDriveTimer = new Timer();
-
-  // elevator motor controller
-  private final double m_kElevatorSpeed = Math.PI / 2; // radians per second
-
-   // TODO tune this for gravity on the elevator
-  private final double m_kElevatorFeedForward = 0.0; // offset for gravity https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#gravity-offset-elevator
 
   @Override
   public void robotInit(){
@@ -72,22 +68,31 @@ public class Robot extends TimedRobot {
     var frel = SmartDashboard.getBoolean("Use Field Relative", false);
     driveWithJoystick(frel);
 
-    if(m_controller.getAButton()){
+    if(m_driver_controller.getAButton()){
       m_swerve.m_gyro.reset();
     }
+
+    if (m_operator_controller.getRightTriggerAxis() > m_operator_controller.getLeftTriggerAxis()) {
+      m_elevator.move(m_operator_controller.getRightTriggerAxis() * 12);
+    } else {
+      m_elevator.move(m_operator_controller.getLeftTriggerAxis() * 12);
+    }
+
+
 
   }
 
   @Override
   public void robotPeriodic(){
-    m_swerve.updateOdometry();
+    m_swerve.robotPeriodic();
+    m_elevator.robotPeriodic();
   }
 
   private void driveWithJoystick(boolean fieldRelative) {
     //the xbox controller we use has around a 5% center error
-    var xDead = MathUtil.applyDeadband(m_controller.getLeftY(), 0.05);
-    var yDead = MathUtil.applyDeadband(m_controller.getLeftX(), 0.05);
-    var rotDead = MathUtil.applyDeadband(m_controller.getRightX(), 0.05);
+    var xDead = MathUtil.applyDeadband(m_driver_controller.getLeftY(), 0.05);
+    var yDead = MathUtil.applyDeadband(m_driver_controller.getLeftX(), 0.05);
+    var rotDead = MathUtil.applyDeadband(m_driver_controller.getRightX(), 0.05);
     // Get the x speed. We are inverting this because Xbox controllers return
     // negative values when we push forward.
     final var xSpeed = -m_xspeedLimiter.calculate(xDead) * Drivetrain.kMaxSpeed;

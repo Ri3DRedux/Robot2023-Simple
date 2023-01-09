@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems;
 
+import org.photonvision.PhotonCamera;
+import org.photonvision.targeting.PhotonTrackedTarget;
+
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.VecBuilder;
@@ -68,6 +71,14 @@ public class Drivetrain extends SubsystemBase {
   public final SwerveModule m_backLeft = new SwerveModule("BL", 5, 6, 2, BL_ENCODER_MOUNT_OFFSET_RAD);
   public final SwerveModule m_backRight = new SwerveModule("BR", 7, 8, 3, BR_ENCODER_MOUNT_OFFSET_RAD);
 
+  
+  // Camera auto-align to target things
+  public final PhotonCamera cam = new PhotonCamera("Black_Cam");
+  public final double CAM_ALIGN_P_GAIN = Drivetrain.kMaxAngularSpeed * 0.2 / 40.0;// radpersec per degree
+  public final double CAM_ALIGN_TARGET_YAW = 0.0;
+  public final int CAM_ALIGN_ID = 1; // only align to ID 1
+
+
   public final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
 
   // private final PhotonCamWrapper m_cam = new PhotonCamWrapper(photonCamName, photonCamMountLocation);
@@ -129,7 +140,32 @@ public class Drivetrain extends SubsystemBase {
   }
 
   public void periodic(){
+    updateCamera();
     updateOdometry();
+  }
+
+  public void updateCamera(){
+    //Vision closed-loop alignment - if requested, override 
+    // rotation by a closed-loop P control to turn toward the target
+    double camAngle = CAM_ALIGN_TARGET_YAW;
+    boolean targetVisible = false;
+
+    if(cam.hasTargets() && cam.isConnected())
+    {
+        var res = cam.getLatestResult();
+
+        for(PhotonTrackedTarget tgt : res.getTargets())
+        {
+          if(tgt.getFiducialId() == CAM_ALIGN_ID)
+          {
+            camAngle = tgt.getYaw();
+            targetVisible = true;
+          }
+        }
+    }
+
+    SmartDashboard.putBoolean("Cam Target Visible", targetVisible);
+    SmartDashboard.putNumber("Cam Target Angle Deg", camAngle);
   }
 
   // Updates the field relative position of the robot.

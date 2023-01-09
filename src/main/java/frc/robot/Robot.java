@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import org.photonvision.PhotonCamera;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -17,16 +19,24 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Elevator;
+import frc.robot.subsystems.Intake;
 
 public class Robot extends TimedRobot {
   private final CommandXboxController m_driver_controller = new CommandXboxController(0);
   private final CommandXboxController m_operator_controller = new CommandXboxController(1);
   private final Drivetrain m_swerve = new Drivetrain();
   private final Elevator m_elevator = new Elevator();
+  private final Arm m_arm = new Arm();
+  private final Intake m_intake = new Intake();
 
   private final Pose2d m_autoStartPose = new Pose2d();
+
+  public final PhotonCamera cam = new PhotonCamera("Black_Cam");
+
+  public final double CAM_ALIGN_P_GAIN = ;//radpersec per degree 
 
   @Override
   public void robotInit() {
@@ -34,6 +44,8 @@ public class Robot extends TimedRobot {
     configureButtonBindings();
 
     SmartDashboard.putBoolean("Use Field Relative", false);
+
+    cam.setVersionCheckEnabled(false);
   }
 
   @Override
@@ -74,7 +86,7 @@ public class Robot extends TimedRobot {
           m_swerve.m_gyro.reset();
         }));
 
-    m_operator_controller
+    m_operator_controller // elevator up
         .rightTrigger(0.03)
         .whileTrue(
             Commands.run(
@@ -83,7 +95,7 @@ public class Robot extends TimedRobot {
                 },
                 m_elevator));
 
-    m_operator_controller
+    m_operator_controller // elevator down
         .leftTrigger(0.03)
         .whileTrue(
             Commands.run(
@@ -91,6 +103,24 @@ public class Robot extends TimedRobot {
                   m_elevator.move(-12 * m_operator_controller.getLeftTriggerAxis());
                 },
                 m_elevator));
+
+    m_operator_controller // intake push
+        .rightBumper()
+        .whileTrue(
+            Commands.run(() -> {
+                m_intake.moveRightMotor(12);
+                m_intake.moveLeftMotor(12);
+            }, m_intake));
+
+    m_operator_controller // intake pull
+        .leftBumper()
+        .whileTrue(
+            Commands.run(() -> {
+                m_intake.moveRightMotor(-12);
+                m_intake.moveLeftMotor(-12);
+            }, m_intake));
+
+    m_a
 
     m_swerve.setDefaultCommand(Commands.run(
         () -> {
@@ -113,6 +143,18 @@ public class Robot extends TimedRobot {
           // mathematics). Xbox controllers return positive values when you pull to
           // the right by default.
           final var rot = -rotDead * Drivetrain.kMaxAngularSpeed;
+
+          //Vision closed-loop alignment - if requested, override 
+          // rotation by a closed-loop P control to turn toward the target
+          if(m_driver_controller.rightBumper()){
+            if(cam.hasTargets()){
+              var res = cam.getLatestResult(); 
+              var angleErr = res.getBestTarget().getYaw() - CAM_ALIGN_TARGET_YAW;
+              rot = angleErr * CAM_ALIGN_P_GAIN;
+            } else {
+              rot = 0;
+            }
+          }
 
           m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
         }, m_swerve));

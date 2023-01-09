@@ -15,13 +15,11 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.SwerveModule;
-import frc.robot.camera.PhotonCamWrapper;
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain extends SubsystemBase {
@@ -56,14 +54,6 @@ public class Drivetrain extends SubsystemBase {
   private final double FR_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(-155.0);
   private final double BL_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(147.0);
   private final double BR_ENCODER_MOUNT_OFFSET_RAD = -Units.degreesToRadians(134.0);
-
-  // Match this with your UI configuration for your camera used
-  // for apriltag detection
-  private final String photonCamName = "PhotonVision";
-
-  // Configure the location and rotation of the camera mounting, relative to your
-  // robot's origin.
-  private final Transform3d photonCamMountLocation = new Transform3d();
 
   // End you-update-em section
   ///////////////////////////////////////////////////////////////

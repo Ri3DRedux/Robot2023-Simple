@@ -82,8 +82,5 @@ public class Elevator extends SubsystemBase {
         } else if (currVoltage > 0 && atTop()) {
             stop();
         }
-        
-
     }
-
 }

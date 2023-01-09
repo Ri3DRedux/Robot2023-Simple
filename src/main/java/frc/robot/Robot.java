@@ -4,13 +4,16 @@
 
 package frc.robot;
 
-import org.photonvision.PhotonCamera;
-import org.photonvision.targeting.PhotonTrackedTarget;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -28,14 +31,22 @@ public class Robot extends TimedRobot {
   private final Arm m_arm = new Arm();
   private final Intake m_intake = new Intake();
   private final Pose2d m_autoStartPose = new Pose2d();
+  private final PowerDistribution pdp = new PowerDistribution(0,ModuleType.kCTRE);
+  private NetworkTable table;
 
   @Override
   public void robotInit() {
-    CommandScheduler.getInstance().registerSubsystem(m_elevator, m_elevator, m_arm, m_intake);
+    // Starts recording to data log
+    DataLogManager.start();
+    // Record both DS control and joystick data
+    DriverStation.startDataLog(DataLogManager.getLog());
+    table = NetworkTableInstance.getDefault().getTable("/status");
+
+    CommandScheduler.getInstance().registerSubsystem(m_elevator, m_swerve, m_arm, m_intake);
     configureButtonBindings();
 
     SmartDashboard.putBoolean("Use Field Relative", false);
-
+    new LoopTimeLogger(this);
     //cam.setVersionCheckEnabled(false);
   }
 
@@ -68,6 +79,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    loggingPeriodic();
   }
 
   public void configureButtonBindings() {
@@ -167,8 +179,46 @@ public class Robot extends TimedRobot {
     }, m_swerve));
 
   }
-  YOURCLASS f = new YOURCLASS(); //Make an object of your class
-  Field a = f.getClass().getDeclaredField("privateListObject");    //get private declared object from class
-  a.setAccessible(true);  //Make it accessible so you can access it
-  ArrayList al = (ArrayList) a.get(f);    // At last it's yours.
+
+  //TODO: Fill in channel names with actual function names
+  public String[] pdpChannelNames = {
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15"
+  };
+
+  public void loggingPeriodic() {
+    for(int i=0; i<pdpChannelNames.length; i++) {
+      table.getEntry("PDP Current " + pdpChannelNames[i]).setDouble(pdp.getCurrent(i));
+    }
+    table.getEntry("PDP Voltage").setDouble(pdp.getVoltage());
+    table.getEntry("PDP Total Current").setDouble(pdp.getTotalCurrent());
+  
+    var canStatus = RobotController.getCANStatus();
+    table.getEntry("CAN Bandwidth").setDouble(canStatus.percentBusUtilization);
+    table.getEntry("CAN Bus Off Count").setDouble(canStatus.busOffCount);
+    table.getEntry("CAN RX Error Count").setDouble(canStatus.receiveErrorCount);
+    table.getEntry("CAN Tx Error Count").setDouble(canStatus.transmitErrorCount);
+    table.getEntry("CAN Tx Full Count").setDouble(canStatus.txFullCount);
+
+    table.getEntry("Rio 3.3V Voltage").setDouble(RobotController.getVoltage3V3());
+    table.getEntry("Rio 5V Voltage").setDouble(RobotController.getVoltage5V());
+    table.getEntry("Rio 6V Voltage").setDouble(RobotController.getVoltage6V());
+    table.getEntry("Rio 3.3V Current").setDouble(RobotController.getCurrent3V3());
+    table.getEntry("Rio 5V Current").setDouble(RobotController.getCurrent5V());
+    table.getEntry("Rio 6V Current").setDouble(RobotController.getCurrent6V());
+  }
 }

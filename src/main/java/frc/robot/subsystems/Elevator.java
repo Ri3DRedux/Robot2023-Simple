@@ -16,8 +16,8 @@ public class Elevator extends SubsystemBase {
     public final double m_kTOFbottom = 1; // inches
     public final double m_kTOFtop = 24; // inches
   
-    public final CANSparkMax m_motor = new CANSparkMax(10, MotorType.kBrushless); // TODO get the CAN ID of the elevator's sparkmax
-    public final TimeOfFlight m_tof = new TimeOfFlight(1); // TODO get the sensor ID of the ToF sensor
+    public final CANSparkMax m_motor = new CANSparkMax(10, MotorType.kBrushless);
+    public final TimeOfFlight m_tof = new TimeOfFlight(1);
     public final RelativeEncoder m_encoder;
 
     public Elevator() {

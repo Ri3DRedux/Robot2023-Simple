@@ -17,7 +17,7 @@ public class SparkMaxWrapper {
     
     CANSparkMax m_motor;
     SparkMaxPIDController m_pidController;
-    RelativeEncoder m_encoder;
+    public RelativeEncoder m_encoder;
 
 
     public SparkMaxWrapper(int can_id){

@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot;
+package frc.robot.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
 
@@ -19,10 +19,12 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.SwerveModule;
 import frc.robot.camera.PhotonCamWrapper;
 
 /** Represents a swerve drive style drivetrain. */
-public class Drivetrain {
+public class Drivetrain extends SubsystemBase {
 
   ///////////////////////////////////////////////////////////////
   // Update all these for your drivetrain
@@ -35,7 +37,7 @@ public class Drivetrain {
   // Physical dimensions of the drivetrain. What's important here is the
   // width and length between the contact patches of the wheels touching the
   // ground
-  // (which likely isn't the same as your frame perimeter)
+  // (which likely isn't the same as your frame perimiter)
   private final double trackWidth_m = Units.inchesToMeters(27);
   private final double trackLength_m = Units.inchesToMeters(27);
 
@@ -136,7 +138,7 @@ public class Drivetrain {
     m_backRight.setDesiredState(swerveModuleStates[3]);
   }
 
-  public void robotPeriodic(){
+  public void periodic(){
     updateOdometry();
   }
 

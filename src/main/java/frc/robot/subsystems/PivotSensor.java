@@ -16,6 +16,10 @@ public class PivotSensor {
     public final double MIN_ANGLE = -20.0;
     public final double MAX_ANGLE = 160.0;
 
+    public PivotSensor(int id) {
+        pivotEncoder = new DutyCycleEncoder(id);
+    }
+
     public double getAngleDeg(){
         var rawDC = pivotEncoder.get();
         //Frac is 0 at lowest point, 1 at max extension

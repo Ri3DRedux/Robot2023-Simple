@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.motorcontrol.PWMTalonSRX;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -12,7 +13,7 @@ import frc.robot.Robot;
 
 public class Intake extends SubsystemBase {
 
-    public PWMTalonSRX rollerMotor = new PWMTalonSRX(-1);
+    public PWMTalonSRX rollerMotor = new PWMTalonSRX(11);
     DoubleSolenoid extendSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 0); // TODO this
 
     private DoubleSolenoid.Value upPosition = DoubleSolenoid.Value.kForward;
@@ -54,6 +55,12 @@ public class Intake extends SubsystemBase {
 
     public boolean isDown() {
         return extendSolenoid.get() == downPosition;
+    }
+
+    public void periodic() {
+        SmartDashboard.putBoolean("intake/isUp", isUp());
+        SmartDashboard.putBoolean("intake/isDown", isDown());
+
     }
 
     public CommandBase upCmd() {

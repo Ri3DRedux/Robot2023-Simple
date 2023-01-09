@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax.IdleMode;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -18,7 +19,7 @@ public class Arm extends SubsystemBase {
     // REFERENCE FRAME NOTES
     //
     // Arm angle:
-    // Zero is level with gravity 👍 ZOMG NOT ASCII, pointed toward the intake.
+    // Zero is level with gravity ZOMG NOT ASCII, pointed toward the intake.
     // Negative is down toward the intake,
     // positive is up and over the top toward scoring positions
     //
@@ -70,7 +71,7 @@ public class Arm extends SubsystemBase {
     // Positive voltage should extend, negative voltage should retract
     // TODO figure this out by asking Tim or Jack or whoever
     // NOTE this may also not be exact since the spool diameter isn't consistent
-    CANSparkMax extensionMotor;
+    CANSparkMax extensionMotor = new CANSparkMax(9, MotorType.kBrushless);
     RelativeEncoder extensionEncoder;
     final double INCHES_PER_EXTENSION_MOTOR_ROT = 0.025;
     final double EXTENSION_ALLOWABLE_ERR_IN = 0.5;
@@ -82,8 +83,8 @@ public class Arm extends SubsystemBase {
     // the angle or length where mechanical
     // conflict happpens
 
-    CANSparkMax pivotMotor;
-    PivotSensor pivotSensor;
+    CANSparkMax pivotMotor = new CANSparkMax(10, MotorType.kBrushless);
+    PivotSensor pivotSensor = new PivotSensor(0);
 
     // ArmPos curCmd = ArmPos.HOME;
     // ArmPos prevCmd = ArmPos.HOME;
@@ -188,8 +189,10 @@ public class Arm extends SubsystemBase {
     }
 
     public void periodic() {
-        SmartDashboard.putNumber("Arm Pivot Angle", getPivotPosition());
-        SmartDashboard.putNumber("Extension Position", getExtensionPosition());
+        SmartDashboard.putNumber("arm/pivot angle", getPivotPosition());
+        SmartDashboard.putNumber("arm/extension position", getExtensionPosition());
+        SmartDashboard.putBoolean("arm/isPivotOutOfTheWayOfTheIntake", isPivotOutOfTheWayOfTheIntake());
+    
     }
 
     public CommandBase pivotArmToCmd(double degrees) {

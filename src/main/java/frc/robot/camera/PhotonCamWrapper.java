@@ -4,12 +4,14 @@
 
 package frc.robot.camera;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -34,16 +36,26 @@ public final class PhotonCamWrapper {
     // TODO - set up actual tag locations (possibly though json?)
     final Transform3d tagLocation = new Transform3d(
             new Translation3d(Units.feetToMeters(54.0), Units.feetToMeters(9.8541), 1.0), new Rotation3d(0, 0, 0));
-    final AprilTagFieldLayout atfl = new AprilTagFieldLayout(
-            Path.of(Filesystem.getDeployDirectory(), "2023-chargedup.json"));
+
+    AprilTagFieldLayout atfl;
 
     final Transform3d robotToCam;
 
-    public PhotonCamWrapper(String cameraName, Transform3d robotToCam) {
+    public PhotonCamWrapper(String cameraName, Transform3d robotToCam)
+    {
         this.cam = new PhotonCamera(cameraName);
         cam.setVersionCheckEnabled(false);
         this.robotToCam = robotToCam;
         this.observations = new ArrayList<CameraPoseObservation>();
+
+        try
+        {
+            atfl = new AprilTagFieldLayout(Path.of(Filesystem.getDeployDirectory().toString(), "2023-chargedup.json"));   
+        }
+        catch (Exception e)
+        {
+            // TODO: handle exception
+        }
     }
 
     public void update() {
@@ -60,11 +72,13 @@ public final class PhotonCamWrapper {
                 Transform3d camToTargetTrans = t.getBestCameraToTarget(); // TODO - better apriltag multiple pose
                                                                           // arbitration strategy
                 var tagLocation = atfl.getTagPose(t.getFiducialId());
-                if (tagLocation.isPresent()) {
-                    Pose3d targetPose = fieldPose.transformBy(tagLocation.get());
-                    Pose3d camPose = targetPose.transformBy(camToTargetTrans.inverse());
-                    Pose2d visionEstPose = camPose.transformBy(robotToCam.inverse()).toPose2d();
-                    observations.add(new CameraPoseObservation(observationTime, visionEstPose, 1.0)); // TODO - add
+                if (tagLocation.isPresent())
+                {
+                    
+                    // Pose3d targetPose = fieldPose.transformBy(tagLocation.get());
+                    // Pose3d camPose = targetPose.transformBy(camToTargetTrans.inverse());
+                    // Pose2d visionEstPose = camPose.transformBy(robotToCam.inverse()).toPose2d();
+                    // observations.add(new CameraPoseObservation(observationTime, visionEstPose, 1.0)); // TODO - add
                                                                                                       // trustworthiness
                                                                                                       // scale by
                                                                                                       // distance -

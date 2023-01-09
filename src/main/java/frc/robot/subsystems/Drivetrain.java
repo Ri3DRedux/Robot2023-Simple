@@ -12,6 +12,7 @@ import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -23,6 +24,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.SwerveModule;
 import frc.robot.camera.PhotonCamWrapper;
@@ -77,9 +79,16 @@ public class Drivetrain extends SubsystemBase {
   public final SwerveModule m_backRight = new SwerveModule("BR", 7, 8, 3, BR_ENCODER_MOUNT_OFFSET_RAD);
 
   ///////////////////////////////////////////////////////////////
-  // PID Controllers for Aligning Based on Pose Estimation
+  // Variables for Auto Alignment Based on Pose Estimation
 
-  private static final 
+  // Relative Field coordinates for April Tag ID #1; taken from game manual
+  private static final double APRIL_TAG_1_ABSOLUTE_X_COORD_INCHES = 610.77;
+  private static final double APRIL_TAG_1_ABSOLUTE_Y_COORD_INCHES = 42.19;
+  private static final double APRIL_TAG_1_ABSOLUTE_ROT_DEGREES    = 180.0;
+
+  private static final Pose2d april_tag_1_pose2d = new Pose2d(APRIL_TAG_1_ABSOLUTE_X_COORD_INCHES, APRIL_TAG_1_ABSOLUTE_Y_COORD_INCHES, new Rotation2d(APRIL_TAG_1_ABSOLUTE_ROT_DEGREES));
+
+  private static final double AUTO_ALIGN_X_DISTANCE_FROM_TAG_INCHES = 32.0;
 
   private static final double AUTO_ALIGN_X_ERROR_TOLERANCE_IN    = 0.5;
   private static final double AUTO_ALIGN_Y_ERROR_TOLERANCE_IN    = 0.5;
@@ -107,7 +116,6 @@ public class Drivetrain extends SubsystemBase {
   public PhotonCamWrapper cam_front = new PhotonCamWrapper("White_Cam", new Transform3d(new Translation3d(trackLength_m/2.0, 0, 0), new Rotation3d(0.0, 0.0, 0.0)));
   public PhotonCamWrapper cam_left = new PhotonCamWrapper("Red_Cam", new Transform3d(new Translation3d(0, trackWidth_m/2.0, 0), new Rotation3d(0.0, 0.0, Math.PI/2.0)));
   public ArrayList<PhotonCamWrapper> camSet = new ArrayList<>(List.of(cam_front, cam_left));
-
 
   public final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
 
@@ -147,6 +155,56 @@ public class Drivetrain extends SubsystemBase {
     autoAlignX_PIDController.setTolerance(AUTO_ALIGN_X_ERROR_TOLERANCE_IN);
     autoAlignY_PIDController.setTolerance(AUTO_ALIGN_Y_ERROR_TOLERANCE_IN);
     autoAlignRot_PIDController.setTolerance(AUTO_ALIGN_ROT_ERROR_TOLERANCE_DEG);
+  }
+
+  public CommandBase getAutoAlignCommand()
+  {
+    return new CommandBase()
+    {
+      private Pose2d robot_pose;
+      private Pose2d april_tag_1_pose;
+
+      private Pose2d desired_robot_pose;
+
+      private void getPoseUpdates()
+      {
+        robot_pose = m_poseEstimator.getEstimatedPosition();
+        desired_robot_pose = new Pose2d((april_tag_1_pose.getX() - AUTO_ALIGN_X_DISTANCE_FROM_TAG_INCHES), (april_tag_1_pose.getY()), new Rotation2d(0.0));
+      }
+
+      public void initialize()
+      {
+        // runs once when the command starts
+
+        april_tag_1_pose = april_tag_1_pose2d;
+
+        getPoseUpdates();
+      }
+
+      public void execute()
+      {
+        getPoseUpdates();
+
+        double new_x_command   = autoAlignX_PIDController.calculate(robot_pose.getX(), desired_robot_pose.getX());
+        double new_y_command   = autoAlignY_PIDController.calculate(robot_pose.getY(), desired_robot_pose.getY());
+        double new_rot_command = autoAlignRot_PIDController.calculate(robot_pose.getRotation().getDegrees(), desired_robot_pose.getRotation().getDegrees());
+
+        drive(new_x_command, new_y_command, new_rot_command, false);
+
+        // loops until isFinished() == true
+      }
+
+      public boolean isFinished()
+      {
+        boolean at_x, at_y, at_rot;
+        at_x   = autoAlignX_PIDController.atSetpoint();
+        at_y   = autoAlignY_PIDController.atSetpoint();
+        at_rot = autoAlignRot_PIDController.atSetpoint();
+
+        // end condition
+        return (at_x && at_y && at_rot);
+      }
+    };
   }
 
   public void resetWheelsToForward(){

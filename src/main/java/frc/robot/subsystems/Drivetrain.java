@@ -4,16 +4,17 @@
 
 package frc.robot.subsystems;
 
-import org.photonvision.PhotonCamera;
-import org.photonvision.targeting.PhotonTrackedTarget;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -23,6 +24,9 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.SwerveModule;
+import frc.robot.camera.PhotonCamWrapper;
+import frc.robot.patch.SwerveDrivePoseEstimator;
+
 
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain extends SubsystemBase {
@@ -39,8 +43,8 @@ public class Drivetrain extends SubsystemBase {
   // width and length between the contact patches of the wheels touching the
   // ground
   // (which likely isn't the same as your frame perimiter)
-  private final double trackWidth_m = Units.inchesToMeters(27);
-  private final double trackLength_m = Units.inchesToMeters(27);
+  private final double trackWidth_m = Units.inchesToMeters(19.5);
+  private final double trackLength_m = Units.inchesToMeters(25);
 
   // Mechanical mounting offsets of the encoder & magnet within the shaft
   // Must be updated whenever the module is reassembled
@@ -73,10 +77,9 @@ public class Drivetrain extends SubsystemBase {
 
   
   // Camera auto-align to target things
-  public final PhotonCamera cam = new PhotonCamera("Black_Cam");
-  public final double CAM_ALIGN_P_GAIN = Drivetrain.kMaxAngularSpeed * 0.2 / 40.0;// radpersec per degree
-  public final double CAM_ALIGN_TARGET_YAW = 0.0;
-  public final int CAM_ALIGN_ID = 1; // only align to ID 1
+  public PhotonCamWrapper cam_front = new PhotonCamWrapper("White_Cam", new Transform3d(new Translation3d(trackLength_m/2.0, 0, 0), new Rotation3d(0.0, 0.0, 0.0)));
+  public PhotonCamWrapper cam_left = new PhotonCamWrapper("Red_Cam", new Transform3d(new Translation3d(0, trackWidth_m/2.0, 0), new Rotation3d(0.0, 0.0, Math.PI/2.0)));
+  public ArrayList<PhotonCamWrapper> camSet = new ArrayList<>(List.of(cam_front, cam_left));
 
 
   public final AHRS m_gyro = new AHRS(SPI.Port.kMXP);
@@ -140,33 +143,9 @@ public class Drivetrain extends SubsystemBase {
   }
 
   public void periodic(){
-    updateCamera();
     updateOdometry();
   }
 
-  public void updateCamera(){
-    //Vision closed-loop alignment - if requested, override 
-    // rotation by a closed-loop P control to turn toward the target
-    double camAngle = CAM_ALIGN_TARGET_YAW;
-    boolean targetVisible = false;
-
-    if(cam.hasTargets() && cam.isConnected())
-    {
-        var res = cam.getLatestResult();
-
-        for(PhotonTrackedTarget tgt : res.getTargets())
-        {
-          if(tgt.getFiducialId() == CAM_ALIGN_ID)
-          {
-            camAngle = tgt.getYaw();
-            targetVisible = true;
-          }
-        }
-    }
-
-    SmartDashboard.putBoolean("Cam Target Visible", targetVisible);
-    SmartDashboard.putNumber("Cam Target Angle Deg", camAngle);
-  }
 
   // Updates the field relative position of the robot.
   public void updateOdometry() {
@@ -187,10 +166,13 @@ public class Drivetrain extends SubsystemBase {
         });
 
     // Put all vision observations into the pose estimator
-    // m_cam.update();
-    // for (var obs : m_cam.getCurObservations()) {
-      // m_poseEstimator.addVisionMeasurement(obs.estFieldPose, obs.time);
-    // }
+    for(var cam : camSet){
+      cam.update();
+      for (var obs : cam.getCurObservations()) {
+        m_poseEstimator.addVisionMeasurement(obs.estFieldPose, obs.time);
+      }
+    }
+
 
     field.getObject("Robot").setPose(m_poseEstimator.getEstimatedPosition());
   }

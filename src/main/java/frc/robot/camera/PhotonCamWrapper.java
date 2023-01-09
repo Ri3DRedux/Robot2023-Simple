@@ -39,6 +39,7 @@ public final class PhotonCamWrapper {
 
   public PhotonCamWrapper(String cameraName, Transform3d robotToCam){
       this.cam = new PhotonCamera(cameraName);
+      cam.setVersionCheckEnabled(false);
       this.robotToCam = robotToCam;
       this.observations = new ArrayList<CameraPoseObservation>();
   }
@@ -48,16 +49,19 @@ public final class PhotonCamWrapper {
       var res = cam.getLatestResult();
       double observationTime = Timer.getFPGATimestamp() - res.getLatencyMillis();
 
-      List<PhotonTrackedTarget> tgtList = res.getTargets();
 
       observations = new ArrayList<CameraPoseObservation>();
 
-      for(PhotonTrackedTarget t : tgtList){
-          Transform3d camToTargetTrans = t.getBestCameraToTarget(); //TODO - better apriltag multiple pose arbitration strategy
-          Pose3d targetPose = fieldPose.transformBy(tagLocation);
-          Pose3d camPose = targetPose.transformBy(camToTargetTrans.inverse());
-          Pose2d visionEstPose = camPose.transformBy(robotToCam.inverse()).toPose2d();   
-          observations.add(new CameraPoseObservation(observationTime, visionEstPose, 1.0)); //TODO - add trustworthiness scale by distance - further targets are less accurate  
+      if(cam.isConnected()){
+        List<PhotonTrackedTarget> tgtList = res.getTargets();
+
+        for(PhotonTrackedTarget t : tgtList){
+            Transform3d camToTargetTrans = t.getBestCameraToTarget(); //TODO - better apriltag multiple pose arbitration strategy
+            Pose3d targetPose = fieldPose.transformBy(tagLocation);
+            Pose3d camPose = targetPose.transformBy(camToTargetTrans.inverse());
+            Pose2d visionEstPose = camPose.transformBy(robotToCam.inverse()).toPose2d();   
+            observations.add(new CameraPoseObservation(observationTime, visionEstPose, 1.0)); //TODO - add trustworthiness scale by distance - further targets are less accurate  
+        }
       }
   }
 

@@ -12,10 +12,10 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Elevator extends SubsystemBase {
-    
+
     public final double m_kTOFbottom = 1; // inches
     public final double m_kTOFtop = 24; // inches
-  
+
     public final CANSparkMax m_motor = new CANSparkMax(10, MotorType.kBrushless);
     public final TimeOfFlight m_tof = new TimeOfFlight(1);
     public final RelativeEncoder m_encoder;
@@ -27,17 +27,19 @@ public class Elevator extends SubsystemBase {
         m_motor.setIdleMode(IdleMode.kBrake);
         m_motor.setSmartCurrentLimit(40);
         m_motor.setInverted(true);
+        m_motor.burnFlash();
 
         m_encoder = m_motor.getEncoder();
-        m_encoder.setPositionConversionFactor(1/3.47);
+        m_encoder.setPositionConversionFactor(1 / 3.47);
 
         stop();
 
-
-        setDefaultCommand(Commands.runOnce(() -> { stop(); }, this));
+        setDefaultCommand(Commands.runOnce(() -> {
+            stop();
+        }, this));
     }
 
-    public boolean atBottom(){
+    public boolean atBottom() {
         return getHeight() <= m_kTOFbottom;
     }
 

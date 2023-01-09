@@ -5,20 +5,16 @@
 package frc.robot;
 
 import org.photonvision.PhotonCamera;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.subsystems.Arm;
 import frc.robot.subsystems.Drivetrain;
 import frc.robot.subsystems.Elevator;
@@ -33,10 +29,6 @@ public class Robot extends TimedRobot {
   private final Intake m_intake = new Intake();
 
   private final Pose2d m_autoStartPose = new Pose2d();
-
-  public final PhotonCamera cam = new PhotonCamera("Black_Cam");
-
-  public final double CAM_ALIGN_P_GAIN = ;//radpersec per degree 
 
   @Override
   public void robotInit() {
@@ -104,23 +96,25 @@ public class Robot extends TimedRobot {
                 },
                 m_elevator));
 
-    m_operator_controller // intake push
-        .rightBumper()
-        .whileTrue(
-            Commands.run(() -> {
-                m_intake.moveRightMotor(12);
-                m_intake.moveLeftMotor(12);
-            }, m_intake));
-
-    m_operator_controller // intake pull
+    m_operator_controller // intake
         .leftBumper()
         .whileTrue(
             Commands.run(() -> {
-                m_intake.moveRightMotor(-12);
-                m_intake.moveLeftMotor(-12);
+              m_intake.intake(12);
             }, m_intake));
 
-    m_a
+    m_operator_controller // outtake
+        .rightBumper()
+        .whileTrue(
+            Commands.run(() -> {
+              m_intake.outtake(12);
+            }, m_intake));
+
+    m_arm.setDefaultCommand(Commands.run(
+        () -> {
+          var voltage = m_operator_controller.getRightY() * 3; // should we put a deadband on this?
+          m_arm.move(voltage);
+        }));
 
     m_swerve.setDefaultCommand(Commands.run(
         () -> {
@@ -144,20 +138,33 @@ public class Robot extends TimedRobot {
           // the right by default.
           final var rot = -rotDead * Drivetrain.kMaxAngularSpeed;
 
-          //Vision closed-loop alignment - if requested, override 
-          // rotation by a closed-loop P control to turn toward the target
-          if(m_driver_controller.rightBumper()){
-            if(cam.hasTargets()){
-              var res = cam.getLatestResult(); 
-              var angleErr = res.getBestTarget().getYaw() - CAM_ALIGN_TARGET_YAW;
-              rot = angleErr * CAM_ALIGN_P_GAIN;
-            } else {
-              rot = 0;
-            }
-          }
-
           m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
         }, m_swerve));
+
+    m_driver_controller.rightBumper().onTrue(Commands.run(() -> {
+
+      // the xbox controller we use has around a 5% center error
+      var xDead = MathUtil.applyDeadband(m_driver_controller.getLeftY(), 0.05);
+      var yDead = MathUtil.applyDeadband(m_driver_controller.getLeftX(), 0.05);
+      // Get the x speed. We are inverting this because Xbox controllers return
+      // negative values when we push forward.
+      final var xSpeed = -xDead * Drivetrain.kMaxSpeed;
+
+      // Get the y speed or sideways/strafe speed. We are inverting this because
+      // we want a positive value when we pull to the left. Xbox controllers
+      // return positive values when you pull to the right by default.
+      final var ySpeed = -yDead * Drivetrain.kMaxSpeed;
+
+      var rot = 0;
+
+      // if (targetVisible) {
+      //   var angleErr = camAngle - CAM_ALIGN_TARGET_YAW;
+      //   rot = angleErr * CAM_ALIGN_P_GAIN;
+      // } 
+
+      m_swerve.drive(xSpeed, ySpeed, rot, false);
+
+    }, m_swerve));
 
   }
 

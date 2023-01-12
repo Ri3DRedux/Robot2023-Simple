@@ -1,5 +1,8 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.Solenoid;
@@ -13,28 +16,37 @@ import frc.robot.Robot;
 
 public class Intake extends SubsystemBase {
 
-    public PWMTalonSRX rollerMotor = new PWMTalonSRX(11);
-    DoubleSolenoid extendSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 0); // TODO this
+    public WPI_TalonSRX rollerMotor = new WPI_TalonSRX(11);
+    Solenoid extendSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, 1); // TODO this
 
-    private DoubleSolenoid.Value upPosition = DoubleSolenoid.Value.kForward;
-    private DoubleSolenoid.Value downPosition = DoubleSolenoid.Value.kReverse;
+    private boolean upPosition = true;
+    private boolean downPosition = false;
 
     Robot robot;
 
     public Intake(Robot robot) {
         this.robot = robot;
+
+        setDefaultCommand(this.run(() -> {
+            stop();
+        }));
     }
 
     public void intake() {
-        intake(0.5);
+        intake(12);
     }
 
     public void intake(double volts) {
         rollerMotor.setVoltage(volts);
+        
     }
 
     public void outtake() {
-        outtake(0.5);
+        outtake(12);
+    }
+
+    public void stop() {
+        rollerMotor.stopMotor();
     }
 
     public void outtake(double volts) {
@@ -42,11 +54,11 @@ public class Intake extends SubsystemBase {
     }
 
     public void down() {
-        extendSolenoid.set(upPosition);
+        extendSolenoid.set(downPosition);
     }
 
     public void up() {
-        extendSolenoid.set(downPosition);
+        extendSolenoid.set(upPosition);
     }
 
     public boolean isUp() {

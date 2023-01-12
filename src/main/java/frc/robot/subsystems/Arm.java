@@ -35,11 +35,11 @@ public class Arm extends SubsystemBase {
 
     public enum ArmPos {
         // TODO program the positions for the arm here
-        HOME(-60, 0.0),
-        PICKUP(-50, 0.0),
-        PLACE_LOW(215, 1.0),
-        PLACE_MID(180, 1.5),
-        PLACE_HIGH(150, 2.0);
+        HOME(-49, 0.0),
+        PICKUP(-49, 0.0),
+        PLACE_LOW(234, 5.0),
+        PLACE_MID(189, 10.0),
+        PLACE_HIGH(147, 12.0);
 
         public final double angle;
         public final double extension;
@@ -54,10 +54,10 @@ public class Arm extends SubsystemBase {
     // set all to zero - crank up kG till the arm feels weightless and doesn't kill
     // anyone
     // then tune kP and whatnot
-    private final double pivot_kP = 0.0;
-    private final double pivot_kI = 0.0;
-    private final double pivot_kD = 0.0;
-    private final double pivot_kG = 0.0; // Volts per cosine of angle or whatever that is in units does it look like I
+    public final double pivot_kP = 0.0;
+    public final double pivot_kI = 0.0;
+    public final double pivot_kD = 0.0;
+    public final double pivot_kG = 0.25; // Volts per cosine of angle or whatever that is in units does it look like I
                                          // know what I'm doing I've just got a BS in EE and you make me write code come
                                          // on man you get what you pay for and I ain't been paid squat except in coffee
                                          // and I really appreciate the coffee thanks #winning yay #bensbasementbunch
@@ -71,20 +71,21 @@ public class Arm extends SubsystemBase {
     // Positive voltage should extend, negative voltage should retract
     // TODO figure this out by asking Tim or Jack or whoever
     // NOTE this may also not be exact since the spool diameter isn't consistent
-    CANSparkMax extensionMotor = new CANSparkMax(9, MotorType.kBrushless);
-    RelativeEncoder extensionEncoder;
-    final double INCHES_PER_EXTENSION_MOTOR_ROT = 0.025;
-    final double EXTENSION_ALLOWABLE_ERR_IN = 0.5;
-    final double EXTENSION_MAX_VOLTS = 4.0;
-    final double EXTENSION_MAX_INCHES = 12; // inches
+    public CANSparkMax extensionMotor = new CANSparkMax(15, MotorType.kBrushless);
+    public RelativeEncoder extensionEncoder;
+    final double INCHES_PER_EXTENSION_MOTOR_ROT = 0.172;
+    // final double INCHES_PER_EXTENSION_MOTOR_ROT = 1;
+    public final double EXTENSION_ALLOWABLE_ERR_IN = 0.5;
+    public final double EXTENSION_MAX_VOLTS = 4.0;
+    public final double EXTENSION_MAX_INCHES = 12; // inches
 
     // final double EXTENSION_CONFLICT_MAX_ALLOWED = 0.5;
     // final double PIVOT_ANGLE_CONFLICT_THRESHOLD = 0.0; // total guess but this is
     // the angle or length where mechanical
     // conflict happpens
 
-    CANSparkMax pivotMotor = new CANSparkMax(10, MotorType.kBrushless);
-    PivotSensor pivotSensor = new PivotSensor(0);
+    public CANSparkMax pivotMotor = new CANSparkMax(10, MotorType.kBrushless);
+    public PivotSensor pivotSensor = new PivotSensor(0);
 
     // ArmPos curCmd = ArmPos.HOME;
     // ArmPos prevCmd = ArmPos.HOME;
@@ -92,20 +93,20 @@ public class Arm extends SubsystemBase {
 
     private Robot robot;
 
-    PIDController pivotPIDController = new PIDController(pivot_kP, pivot_kI, pivot_kD);
-    PIDController extensionPIDController = new PIDController(extension_kP, extension_kI, extension_kD);
+    public PIDController pivotPIDController = new PIDController(pivot_kP, pivot_kI, pivot_kD);
+    public PIDController extensionPIDController = new PIDController(extension_kP, extension_kI, extension_kD);
 
     public Arm(Robot robot) {
         this.robot = robot;
 
-        extensionMotor.restoreFactoryDefaults();
+        // extensionMotor.restoreFactoryDefaults();
         extensionMotor.setIdleMode(IdleMode.kBrake);
         extensionMotor.setSmartCurrentLimit(40);
-        extensionMotor.setInverted(false);
-        extensionMotor.burnFlash();
+        extensionMotor.setInverted(true);
+        // extensionMotor.burnFlash();
 
         extensionEncoder = extensionMotor.getEncoder();
-        extensionEncoder.setPositionConversionFactor(INCHES_PER_EXTENSION_MOTOR_ROT);
+        // extensionEncoder.setPositionConversionFactor(INCHES_PER_EXTENSION_MOTOR_ROT);
 
         pivotMotor.restoreFactoryDefaults();
         pivotMotor.setIdleMode(IdleMode.kBrake);
@@ -135,7 +136,7 @@ public class Arm extends SubsystemBase {
             }
         } else {
             if (pivotSensor.atBottom()
-                    || (getExtensionPosition() > 0 && getPivotPosition() <= 0)
+                    || (getExtensionPosition() > 5 && ! isPivotOutOfTheWayOfTheIntake())
                     || (robot.intake.isUp() && ! isPivotOutOfTheWayOfTheIntake())) {
                 pivotMotor.stopMotor();
                 return false;
@@ -154,19 +155,19 @@ public class Arm extends SubsystemBase {
         // Positive voltage should extend, negative voltage should retract
         // return success (true if can move, false if move was blocked)
         if (volts > 0) {
-            if (extensionEncoder.getPosition() >= EXTENSION_MAX_INCHES || getPivotPosition() <= 0) {
-                pivotMotor.stopMotor();
+            if (false && (extensionEncoder.getPosition() >= EXTENSION_MAX_INCHES || !isPivotOutOfTheWayOfTheIntake())) {
+                extensionMotor.stopMotor();
                 return false;
             } else {
-                pivotMotor.setVoltage(volts);
+                extensionMotor.setVoltage(volts);
                 return true;
             }
         } else {
-            if (getExtensionPosition() <= 0) {
-                pivotMotor.stopMotor();
+            if (getExtensionPosition() <= 0.5) {
+                extensionMotor.stopMotor();
                 return false;
             } else {
-                pivotMotor.setVoltage(volts);
+                extensionMotor.setVoltage(volts);
                 return true;
             }
         }
@@ -185,13 +186,17 @@ public class Arm extends SubsystemBase {
     }
 
     public boolean isPivotOutOfTheWayOfTheIntake() {
-        return getPivotPosition() > 0;
+        return getPivotPosition() > -17;
     }
 
     public void periodic() {
         SmartDashboard.putNumber("arm/pivot angle", getPivotPosition());
         SmartDashboard.putNumber("arm/extension position", getExtensionPosition());
         SmartDashboard.putBoolean("arm/isPivotOutOfTheWayOfTheIntake", isPivotOutOfTheWayOfTheIntake());
+        SmartDashboard.putBoolean("arm/pivotSensor/atTop", pivotSensor.atTop());
+        SmartDashboard.putBoolean("arm/pivotSensor/atBottom", pivotSensor.atBottom());
+        SmartDashboard.putNumber("arm/pivot voltage", 12 * pivotMotor.get());
+        SmartDashboard.putNumber("arm/velocity", pivotMotor.getEncoder().getVelocity());
     
     }
 

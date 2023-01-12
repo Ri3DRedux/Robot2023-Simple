@@ -5,6 +5,7 @@ import com.playingwithfusion.TimeOfFlight.RangingMode;
 
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -13,11 +14,11 @@ import frc.robot.Robot;
 
 public class Pincher extends SubsystemBase{
 
-    DoubleSolenoid pincherSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 1); //TODO WHERE IS THIS PLUGGED INTO IT MIGHT NOT BE ZERO
-    public final TimeOfFlight m_tof = new TimeOfFlight(-1); // TODO get the CAN ID of the ToF
+    Solenoid pincherSolenoid = new Solenoid(PneumaticsModuleType.CTREPCM, 0); //TODO WHERE IS THIS PLUGGED INTO IT MIGHT NOT BE ZERO
+    public final TimeOfFlight m_tof = new TimeOfFlight(1); // TODO get the CAN ID of the ToF
 
-    private DoubleSolenoid.Value pinchPosition = DoubleSolenoid.Value.kForward;
-    private DoubleSolenoid.Value releasePosition = DoubleSolenoid.Value.kReverse;
+    private boolean pinchPosition = false;
+    private boolean releasePosition = true;
 
     Robot robot;
 

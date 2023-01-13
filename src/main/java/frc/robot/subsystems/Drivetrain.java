@@ -10,6 +10,7 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -21,6 +22,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.CommandBase;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.SwerveModule;
 import frc.robot.camera.PhotonCamWrapper;
@@ -130,7 +132,7 @@ public class Drivetrain extends SubsystemBase {
   public void drive(double xSpeed, double ySpeed, double rot, boolean fieldRelative) {
     var swerveModuleStates = m_kinematics.toSwerveModuleStates(
         fieldRelative
-            ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.getRotation2d())
+            ? ChassisSpeeds.fromFieldRelativeSpeeds(ySpeed, -xSpeed, rot, m_gyro.getRotation2d())
             : new ChassisSpeeds(xSpeed, ySpeed, rot));
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed);
     m_frontLeft.setDesiredState(swerveModuleStates[0]);
@@ -142,6 +144,12 @@ public class Drivetrain extends SubsystemBase {
   public void periodic(){
     updateCamera();
     updateOdometry();
+    SmartDashboard.putNumber("Gyro Pitch",m_gyro.getRawGyroX());
+    SmartDashboard.putNumber("Gyro Roll",m_gyro.getRawGyroY());
+    SmartDashboard.putNumber("Gyro Yaw",m_gyro.getRawGyroZ());
+    SmartDashboard.putNumber("Accel X", m_gyro.getRawAccelX());
+    SmartDashboard.putNumber("Accel Y", m_gyro.getRawAccelY());
+    SmartDashboard.putNumber("Accel Z", m_gyro.getRawAccelZ());
   }
 
   public void updateCamera(){
@@ -185,4 +193,24 @@ public class Drivetrain extends SubsystemBase {
         }, pos);
 
   }
+
+  public CommandBase balance() {
+    class MoveToCommand extends CommandBase {
+      PIDController pidController = new PIDController(0.2, 0, 0);
+
+        public void initialize() {
+            pidController.reset();
+        }
+
+        public void execute() {
+            var output = pidController.calculate(m_gyro.getRawAccelY(), 0);
+            drive(output, 0,0,false);
+        }
+
+        public boolean isFinished() {
+            return pidController.atSetpoint();
+        }
+    }
+    return new MoveToCommand();
+}
 }

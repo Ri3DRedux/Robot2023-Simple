@@ -16,12 +16,14 @@ public class Arm extends SubsystemBase {
     public CANSparkMax m_motor = new CANSparkMax(20, MotorType.kBrushless);
     public RelativeEncoder m_encoder;
     private static final double SCALE_FACTOR = 1;
+    private double holdValue;
 
-    private static final double kP = 1.0;
+    private static final double kP = 0.1;
     private static final double kI = 0.0;
     private static final double kD = 0.0;
 
     public PIDController pidController = new PIDController(kP, kI, kD);
+    public PIDController holdController = new PIDController(kP, kI, kD);
 
     public Arm() {
 
@@ -33,6 +35,7 @@ public class Arm extends SubsystemBase {
 
         m_encoder = m_motor.getEncoder();
         m_encoder.setPositionConversionFactor(SCALE_FACTOR);
+        holdValue = getPosition();
 
         setDefaultCommand(Commands.runOnce(() -> {
             stop();
@@ -42,16 +45,27 @@ public class Arm extends SubsystemBase {
 
     public void periodic() {
         SmartDashboard.putNumber("Arm Position", m_encoder.getPosition());
+        SmartDashboard.putNumber("Arm Angle", getAngle());
     }
 
     public void move(double volts) {
         m_motor.setVoltage(volts);
+        holdValue = getPosition();
+        holdController.reset();
+    }
+
+    public void hold() {
+        //var volts = holdController.calculate(getPosition(), holdValue);
+        //m_motor.setVoltage(volts);
     }
 
     public void stop() {
-        move(0);
+        move(0.3);
     }
 
+    public double getAngle() {
+        return 180-(m_encoder.getPosition()/(36.92/90));
+    }
     public double getPosition() {
         return m_encoder.getPosition();
     }

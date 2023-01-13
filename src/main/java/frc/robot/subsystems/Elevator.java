@@ -7,6 +7,7 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -19,6 +20,8 @@ public class Elevator extends SubsystemBase {
     public final CANSparkMax m_motor = new CANSparkMax(10, MotorType.kBrushless);
     public final TimeOfFlight m_tof = new TimeOfFlight(1);
     public final RelativeEncoder m_encoder;
+    public double holdHeight = m_kTOFbottom;
+    public PIDController holdPid = new PIDController(0.1, 0, 0);
 
     public Elevator() {
         m_tof.setRangingMode(RangingMode.Short, 25); // 40 times per second
@@ -58,7 +61,13 @@ public class Elevator extends SubsystemBase {
             stop();
         } else {
             m_motor.setVoltage(volts);
+            holdHeight = getToFHeight();
         }
+    }
+
+    public void hold() {
+        double volts = holdPid.calculate(getToFHeight(), holdHeight);
+        m_motor.setVoltage(volts);
     }
 
     public double getToFHeight() {

@@ -89,6 +89,8 @@ public class Robot extends TimedRobot {
           m_swerve.m_gyro.reset();
         }));
 
+    m_driver_controller.y().whileTrue(m_swerve.balance());
+    
     m_operator_controller // elevator up
         .rightTrigger(0.03)
         .whileTrue(
@@ -111,7 +113,8 @@ public class Robot extends TimedRobot {
         .leftBumper()
         .whileTrue(
             Commands.run(() -> {
-              m_intake.intake(7);
+              var volts = m_intake.havePossession() ? 0 : 7;
+              m_intake.intake(volts);
             }, m_intake));
 
     m_operator_controller // outtake
@@ -124,14 +127,18 @@ public class Robot extends TimedRobot {
     m_arm.setDefaultCommand(Commands.run(
         () -> {
           var input = MathUtil.applyDeadband(m_operator_controller.getRightY(), 0.05);
-          var voltage = input * 2.5; // should we put a deadband on this?
-          m_arm.move(voltage);
+          var voltage = input * 2.5; 
+          if(Math.abs(input) < 0.01) {
+            m_arm.hold();
+          } else {
+            m_arm.move(voltage);
+          }
         },m_arm));
 
     m_swerve.setDefaultCommand(Commands
       .run(
         () -> {
-          var fieldRelative = SmartDashboard.getBoolean("Use Field Relative", false);
+          var fieldRelative = m_driver_controller.rightBumper().getAsBoolean();
           // the xbox controller we use has around a 5% center error
           var xDead = MathUtil.applyDeadband(m_driver_controller.getLeftY(), 0.05);
           var yDead = MathUtil.applyDeadband(m_driver_controller.getLeftX(), 0.05);
@@ -154,33 +161,33 @@ public class Robot extends TimedRobot {
           m_swerve.drive(xSpeed, ySpeed, rot, fieldRelative);
         }, m_swerve));
 
-    m_driver_controller.rightBumper().onTrue(Commands.run(() -> {
+  //   m_driver_controller.rightBumper().onTrue(Commands.run(() -> {
 
-      // the xbox controller we use has around a 5% center error
-      var xDead = MathUtil.applyDeadband(m_driver_controller.getLeftY(), 0.05);
-      var yDead = MathUtil.applyDeadband(m_driver_controller.getLeftX(), 0.05);
-      // Get the x speed. We are inverting this because Xbox controllers return
-      // negative values when we push forward.
-      final var xSpeed = -xDead * Drivetrain.kMaxSpeed;
+  //     // the xbox controller we use has around a 5% center error
+  //     var xDead = MathUtil.applyDeadband(m_driver_controller.getLeftY(), 0.05);
+  //     var yDead = MathUtil.applyDeadband(m_driver_controller.getLeftX(), 0.05);
+  //     // Get the x speed. We are inverting this because Xbox controllers return
+  //     // negative values when we push forward.
+  //     final var xSpeed = -xDead * Drivetrain.kMaxSpeed;
 
-      // Get the y speed or sideways/strafe speed. We are inverting this because
-      // we want a positive value when we pull to the left. Xbox controllers
-      // return positive values when you pull to the right by default.
-      final var ySpeed = -yDead * Drivetrain.kMaxSpeed;
+  //     // Get the y speed or sideways/strafe speed. We are inverting this because
+  //     // we want a positive value when we pull to the left. Xbox controllers
+  //     // return positive values when you pull to the right by default.
+  //     final var ySpeed = -yDead * Drivetrain.kMaxSpeed;
 
-      var rot = 0.0;
+  //     var rot = 0.0;
 
-      //@Vasista inject the wpi apriltag stuff here 
-      var camYaw = m_swerve.cam.getTgtYaw();
+  //     //@Vasista inject the wpi apriltag stuff here 
+  //     var camYaw = m_swerve.cam.getTgtYaw();
 
-      if (camYaw.isPresent()) {
-        var angleErr = camYaw.get() - Drivetrain.CAM_ALIGN_TARGET_YAW;
-        rot = angleErr * Drivetrain.CAM_ALIGN_P_GAIN;
-      } 
+  //     if (camYaw.isPresent()) {
+  //       var angleErr = camYaw.get() - Drivetrain.CAM_ALIGN_TARGET_YAW;
+  //       rot = angleErr * Drivetrain.CAM_ALIGN_P_GAIN;
+  //     } 
 
-      m_swerve.drive(xSpeed, ySpeed, rot, false);
+  //     m_swerve.drive(xSpeed, ySpeed, rot, false);
 
-    }, m_swerve));
+  //   }, m_swerve));
 
   }
 
